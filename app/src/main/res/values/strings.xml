@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">班车查询</string>
+    <string name="back">返回</string>
+    <string name="empty_routes">暂无路线，点击 + 添加</string>
+    <string name="empty_schedules">该路线暂无车次，点击 + 添加</string>
+    <string name="add_route">添加路线</string>
+    <string name="edit_route">编辑路线</string>
+    <string name="add_schedule">添加车次</string>
+    <string name="edit_schedule">编辑车次</string>
+    <string name="route_name_hint">路线名称</string>
+    <string name="origin_hint">始发站</string>
+    <string name="destination_hint">终点站</string>
+    <string name="save">保存</string>
+    <string name="name_required">请输入路线名称</string>
+    <string name="origin_required">请输入始发站</string>
+    <string name="destination_required">请输入终点站</string>
+    <string name="route_saved">路线已保存</string>
+    <string name="route_updated">路线已更新</string>
+    <string name="route_deleted">已删除「%s」</string>
+    <string name="departure_time_hint">发车时间</string>
+    <string name="pick_departure">选择发车时间</string>
+    <string name="not_set">未设置</string>
+    <string name="pick_time">选择时间</string>
+    <string name="set_departure_time">请设置发车时间</string>
+    <string name="schedule_saved">车次已保存</string>
+    <string name="schedule_updated">车次已更新</string>
+    <string name="schedule_deleted">车次已删除</string>
+    <string name="next_badge">NEXT</string>
+    <string name="next_departure_format">下一班: %s 发车</string>
+    <string name="favorite">收藏</string>
+    <string name="unfavorite">取消收藏</string>
+    <string name="set_default">设为默认</string>
+    <string name="unset_default">取消默认</string>
+    <string name="edit">编辑</string>
+    <string name="delete">删除</string>
+    <string name="cancel">取消</string>
+    <string name="confirm_delete_route">确定删除路线「%s」及其所有车次？</string>
+    <string name="confirm_delete_schedule">确定删除该车次？</string>
+</resources>
