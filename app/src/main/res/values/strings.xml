@@ -37,4 +37,9 @@
     <string name="cancel">取消</string>
     <string name="confirm_delete_route">确定删除路线「%s」及其所有车次？</string>
     <string name="confirm_delete_schedule">确定删除该车次？</string>
+    <string name="action_export">导出</string>
+    <string name="action_import">导入</string>
+    <string name="export_success">已复制到剪贴板</string>
+    <string name="import_success">导入成功</string>
+    <string name="import_error">导入失败，剪贴板内容无效</string>
 </resources>

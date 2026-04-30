@@ -1,9 +1,13 @@
 package com.senk.bus.ui;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.PopupMenu;
@@ -12,11 +16,15 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.senk.bus.MainActivity;
 import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
@@ -68,29 +76,41 @@ public class ScheduleListFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
         RecyclerView recyclerView = view.findViewById(R.id.schedule_recycler_view);
         banner = view.findViewById(R.id.next_departure_banner);
         TextView tvEmpty = view.findViewById(R.id.tv_empty_schedules);
-        FloatingActionButton fab = view.findViewById(R.id.fab_add_schedule);
 
-        view.findViewById(R.id.btn_back).setOnClickListener(v -> {
+        toolbar.setNavigationOnClickListener(v -> {
             if (getParentFragment() instanceof QueryFragment) {
                 getParentFragment().getChildFragmentManager().popBackStack();
             }
         });
+
+        toolbar.addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.menu_schedule_list, menu);
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                if (menuItem.getItemId() == R.id.action_add_schedule) {
+                    QueryFragment parent = (QueryFragment) getParentFragment();
+                    if (parent != null) {
+                        parent.navigateToAddSchedule(routeId);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
 
         adapter = new ScheduleAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
         adapter.setOnScheduleLongClickListener((schedule, anchor) -> showPopupMenu(schedule, anchor));
-
-        fab.setOnClickListener(v -> {
-            QueryFragment parent = (QueryFragment) getParentFragment();
-            if (parent != null) {
-                parent.navigateToAddSchedule(routeId);
-            }
-        });
 
         AppDatabase.getInstance(requireContext()).scheduleDao()
                 .getSchedulesForRoute(routeId)
@@ -100,20 +120,16 @@ public class ScheduleListFragment extends Fragment {
 
                     tvEmpty.setVisibility(sorted.isEmpty() ? View.VISIBLE : View.GONE);
                     recyclerView.setVisibility(sorted.isEmpty() ? View.GONE : View.VISIBLE);
-                    fab.setVisibility(View.VISIBLE);
 
                     updateBanner(sorted);
                 });
 
-        // Load route name for title
+        // Load route name for toolbar title
         AppExecutors.diskIO(() -> {
             com.senk.bus.data.entity.Route route =
                     AppDatabase.getInstance(requireContext()).routeDao().getById(routeId);
             if (route != null && getView() != null) {
-                requireActivity().runOnUiThread(() -> {
-                    TextView title = getView().findViewById(R.id.route_title);
-                    if (title != null) title.setText(route.name);
-                });
+                requireActivity().runOnUiThread(() -> toolbar.setTitle(route.name));
             }
         });
     }

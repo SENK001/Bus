@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 import com.senk.bus.R;
@@ -57,11 +58,13 @@ public class AddEditScheduleFragment extends Fragment {
             scheduleId = getArguments().getInt(ARG_SCHEDULE_ID, NO_ID);
         }
 
-        TextView pageTitle = view.findViewById(R.id.page_title);
-        TextView tvDeparture = view.findViewById(R.id.tv_departure_time);
-
         boolean isEdit = scheduleId != NO_ID;
-        pageTitle.setText(isEdit ? R.string.edit_schedule : R.string.add_schedule);
+
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
+        toolbar.setTitle(isEdit ? R.string.edit_schedule : R.string.add_schedule);
+        toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
+
+        TextView tvDeparture = view.findViewById(R.id.tv_departure_time);
 
         if (isEdit) {
             AppExecutors.diskIO(() -> {
@@ -74,9 +77,6 @@ public class AddEditScheduleFragment extends Fragment {
                 }
             });
         }
-
-        view.findViewById(R.id.btn_back).setOnClickListener(v ->
-                getParentFragmentManager().popBackStack());
 
         view.findViewById(R.id.btn_pick_departure).setOnClickListener(v -> {
             int hour = 8, minute = 0;

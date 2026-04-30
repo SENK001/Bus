@@ -1,18 +1,29 @@
 package com.senk.bus.ui;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import com.google.android.material.appbar.MaterialToolbar;
 import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
@@ -20,10 +31,16 @@ import com.senk.bus.data.entity.Route;
 import com.senk.bus.data.entity.Schedule;
 import com.senk.bus.ui.adapter.RouteAdapter;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class RouteListFragment extends Fragment {
 
@@ -40,9 +57,35 @@ public class RouteListFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
         RecyclerView recyclerView = view.findViewById(R.id.route_recycler_view);
         TextView tvEmpty = view.findViewById(R.id.tv_empty);
-        FloatingActionButton fab = view.findViewById(R.id.fab_add_route);
+
+        toolbar.addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.menu_main, menu);
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                int id = menuItem.getItemId();
+                if (id == R.id.action_add) {
+                    QueryFragment parent = (QueryFragment) getParentFragment();
+                    if (parent != null) {
+                        parent.navigateToAddRoute();
+                    }
+                    return true;
+                } else if (id == R.id.action_export) {
+                    exportData();
+                    return true;
+                } else if (id == R.id.action_import) {
+                    importData();
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
 
         adapter = new RouteAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -57,19 +100,11 @@ public class RouteListFragment extends Fragment {
 
         adapter.setOnRouteLongClickListener((route, anchor) -> showPopupMenu(route, anchor));
 
-        fab.setOnClickListener(v -> {
-            QueryFragment parent = (QueryFragment) getParentFragment();
-            if (parent != null) {
-                parent.navigateToAddRoute();
-            }
-        });
-
         AppDatabase.getInstance(requireContext()).routeDao().getAllRoutes()
                 .observe(getViewLifecycleOwner(), routes -> {
                     adapter.setRoutes(routes);
                     tvEmpty.setVisibility(routes.isEmpty() ? View.VISIBLE : View.GONE);
                     recyclerView.setVisibility(routes.isEmpty() ? View.GONE : View.VISIBLE);
-                    fab.setVisibility(View.VISIBLE);
                     loadNextTimes(routes);
                 });
     }
@@ -81,14 +116,12 @@ public class RouteListFragment extends Fragment {
             for (Route route : routes) {
                 List<Schedule> schedules = db.scheduleDao().getSchedulesForRouteSync(route.id);
                 String next = null;
-                // Find first un-departed schedule
                 for (Schedule s : schedules) {
                     if (s.departureTime.compareTo(now) >= 0) {
                         next = s.departureTime;
                         break;
                     }
                 }
-                // If all past, pick the earliest (tomorrow's first)
                 if (next == null && !schedules.isEmpty()) {
                     next = schedules.get(0).departureTime;
                 }
@@ -157,5 +190,110 @@ public class RouteListFragment extends Fragment {
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
+    }
+
+    private void exportData() {
+        AppExecutors.diskIO(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(requireContext());
+                List<Route> routes = db.routeDao().getAllRoutesSync();
+
+                JSONArray routesArray = new JSONArray();
+                JSONArray schedulesArray = new JSONArray();
+
+                for (int i = 0; i < routes.size(); i++) {
+                    Route route = routes.get(i);
+                    JSONObject routeObj = new JSONObject();
+                    routeObj.put("idx", i);
+                    routeObj.put("name", route.name);
+                    routeObj.put("origin", route.origin);
+                    routeObj.put("destination", route.destination);
+                    routeObj.put("isFavorite", route.isFavorite);
+                    routeObj.put("isDefault", route.isDefault);
+                    routesArray.put(routeObj);
+
+                    List<Schedule> schedules = db.scheduleDao().getSchedulesForRouteSync(route.id);
+                    for (Schedule schedule : schedules) {
+                        JSONObject scheduleObj = new JSONObject();
+                        scheduleObj.put("routeIdx", i);
+                        scheduleObj.put("departureTime", schedule.departureTime);
+                        schedulesArray.put(scheduleObj);
+                    }
+                }
+
+                JSONObject data = new JSONObject();
+                data.put("routes", routesArray);
+                data.put("schedules", schedulesArray);
+
+                String json = data.toString();
+                String base64 = Base64.encodeToString(json.getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP);
+
+                requireActivity().runOnUiThread(() -> {
+                    ClipboardManager clipboard = (ClipboardManager) requireActivity()
+                            .getSystemService(Context.CLIPBOARD_SERVICE);
+                    clipboard.setPrimaryClip(ClipData.newPlainText("bus_data", base64));
+                    Toast.makeText(requireContext(), R.string.export_success, Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), R.string.import_error, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void importData() {
+        ClipboardManager clipboard = (ClipboardManager) requireActivity()
+                .getSystemService(Context.CLIPBOARD_SERVICE);
+        if (!clipboard.hasPrimaryClip() || clipboard.getPrimaryClip().getItemCount() == 0) {
+            Toast.makeText(requireContext(), R.string.import_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String text = clipboard.getPrimaryClip().getItemAt(0).getText().toString().trim();
+        if (text.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.import_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AppExecutors.diskIO(() -> {
+            try {
+                byte[] decoded = Base64.decode(text, Base64.NO_WRAP);
+                String json = new String(decoded, StandardCharsets.UTF_8);
+                JSONObject data = new JSONObject(json);
+
+                AppDatabase db = AppDatabase.getInstance(requireContext());
+                JSONArray routesArray = data.getJSONArray("routes");
+                JSONArray schedulesArray = data.getJSONArray("schedules");
+
+                Map<Integer, Integer> idxToNewId = new HashMap<>();
+
+                for (int i = 0; i < routesArray.length(); i++) {
+                    JSONObject routeObj = routesArray.getJSONObject(i);
+                    Route route = new Route();
+                    route.name = routeObj.getString("name");
+                    route.origin = routeObj.getString("origin");
+                    route.destination = routeObj.getString("destination");
+                    route.isFavorite = routeObj.optBoolean("isFavorite", false);
+                    route.isDefault = routeObj.optBoolean("isDefault", false);
+                    long newId = db.routeDao().insert(route);
+                    idxToNewId.put(routeObj.getInt("idx"), (int) newId);
+                }
+
+                for (int i = 0; i < schedulesArray.length(); i++) {
+                    JSONObject scheduleObj = schedulesArray.getJSONObject(i);
+                    Schedule schedule = new Schedule();
+                    int routeIdx = scheduleObj.getInt("routeIdx");
+                    schedule.routeId = idxToNewId.get(routeIdx);
+                    schedule.departureTime = scheduleObj.getString("departureTime");
+                    db.scheduleDao().insert(schedule);
+                }
+
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), R.string.import_success, Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), R.string.import_error, Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 }

@@ -5,13 +5,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
@@ -51,13 +51,15 @@ public class AddEditRouteFragment extends Fragment {
             routeId = getArguments().getInt(ARG_ROUTE_ID, NO_ID);
         }
 
+        boolean isEdit = routeId != NO_ID;
+
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
+        toolbar.setTitle(isEdit ? R.string.edit_route : R.string.add_route);
+        toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
+
         EditText etName = view.findViewById(R.id.et_route_name);
         EditText etOrigin = view.findViewById(R.id.et_origin);
         EditText etDestination = view.findViewById(R.id.et_destination);
-        TextView pageTitle = view.findViewById(R.id.page_title);
-
-        boolean isEdit = routeId != NO_ID;
-        pageTitle.setText(isEdit ? R.string.edit_route : R.string.add_route);
 
         if (isEdit) {
             AppExecutors.diskIO(() -> {
@@ -71,9 +73,6 @@ public class AddEditRouteFragment extends Fragment {
                 }
             });
         }
-
-        view.findViewById(R.id.btn_back).setOnClickListener(v ->
-                getParentFragmentManager().popBackStack());
 
         view.findViewById(R.id.btn_save).setOnClickListener(v -> {
             String name = etName.getText().toString().trim();
