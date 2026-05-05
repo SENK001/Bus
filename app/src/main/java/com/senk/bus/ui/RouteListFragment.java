@@ -94,7 +94,7 @@ public class RouteListFragment extends Fragment {
         adapter.setOnRouteClickListener(route -> {
             QueryFragment parent = (QueryFragment) getParentFragment();
             if (parent != null) {
-                parent.navigateToScheduleList(route.id);
+                parent.navigateToScheduleList(route.id, route.name);
             }
         });
 

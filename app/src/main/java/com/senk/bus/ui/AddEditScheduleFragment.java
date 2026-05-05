@@ -17,6 +17,8 @@ import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
 import com.senk.bus.data.entity.Schedule;
 
+import android.graphics.Typeface;
+
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -72,13 +74,12 @@ public class AddEditScheduleFragment extends Fragment {
         wheelHour = view.findViewById(R.id.wheel_hour);
         wheelMinute = view.findViewById(R.id.wheel_minute);
 
-        List<String> hours = new ArrayList<>();
-        for (int i = 0; i < 24; i++) hours.add(String.format(Locale.getDefault(),"%02d", i));
-        List<String> minutes = new ArrayList<>();
-        for (int i = 0; i < 60; i++) minutes.add(String.format(Locale.getDefault(),"%02d", i));
-
+        List<String> hours = Arrays.asList(requireActivity().getResources().getStringArray(R.array.hours));
+        List<String> minutes = Arrays.asList(requireActivity().getResources().getStringArray(R.array.minutes));
         wheelHour.setData(hours);
         wheelMinute.setData(minutes);
+        wheelHour.setTypeface(Typeface.MONOSPACE);
+        wheelMinute.setTypeface(Typeface.MONOSPACE);
         LocalDateTime time = LocalDateTime.now();
         hour = time.getHour();
         minute = time.getMinute();

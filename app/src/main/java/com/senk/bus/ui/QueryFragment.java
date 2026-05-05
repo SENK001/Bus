@@ -47,10 +47,10 @@ public class QueryFragment extends Fragment {
         );
     }
 
-    public void navigateToScheduleList(int routeId) {
+    public void navigateToScheduleList(int routeId, String routeName) {
         getChildFragmentManager()
                 .beginTransaction()
-                .replace(R.id.query_container, ScheduleListFragment.newInstance(routeId))
+                .replace(R.id.query_container, ScheduleListFragment.newInstance(routeId, routeName))
                 .addToBackStack(null)
                 .commit();
     }

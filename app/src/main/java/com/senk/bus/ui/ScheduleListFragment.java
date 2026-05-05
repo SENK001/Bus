@@ -41,6 +41,7 @@ import java.util.Locale;
 public class ScheduleListFragment extends Fragment {
 
     private static final String ARG_ROUTE_ID = "route_id";
+    private static final String ARG_ROUTE_NAME = "route_name";
     private static final long REFRESH_INTERVAL = 60_000L;
     private static final int MAX_PADDING_DP = 50;
     private static final int MIN_PADDING_DP = 5;
@@ -53,10 +54,11 @@ public class ScheduleListFragment extends Fragment {
     private Handler handler;
     private Runnable refreshRunnable;
 
-    public static ScheduleListFragment newInstance(int routeId) {
+    public static ScheduleListFragment newInstance(int routeId, String routeName) {
         ScheduleListFragment fragment = new ScheduleListFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_ROUTE_ID, routeId);
+        args.putString(ARG_ROUTE_NAME, routeName);
         fragment.setArguments(args);
         return fragment;
     }
@@ -136,14 +138,9 @@ public class ScheduleListFragment extends Fragment {
                     updateBanner(sorted);
                 });
 
-        // Load route name for toolbar title
-        AppExecutors.diskIO(() -> {
-            com.senk.bus.data.entity.Route route =
-                    AppDatabase.getInstance(requireContext()).routeDao().getById(routeId);
-            if (route != null && getView() != null) {
-                requireActivity().runOnUiThread(() -> toolbar.setTitle(route.name));
-            }
-        });
+        if (getArguments() != null) {
+            toolbar.setTitle(getArguments().getString(ARG_ROUTE_NAME));
+        }
     }
 
     @Override
