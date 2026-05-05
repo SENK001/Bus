@@ -2,6 +2,7 @@ package com.senk.bus.ui;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -74,48 +75,52 @@ public class AddEditRouteFragment extends Fragment {
             });
         }
 
-        view.findViewById(R.id.btn_save).setOnClickListener(v -> {
-            String name = etName.getText().toString().trim();
-            String origin = etOrigin.getText().toString().trim();
-            String destination = etDestination.getText().toString().trim();
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_save) {
+                String name = etName.getText().toString().trim();
+                String origin = etOrigin.getText().toString().trim();
+                String destination = etDestination.getText().toString().trim();
 
-            if (name.isEmpty()) {
-                etName.setError(getString(R.string.name_required));
-                return;
-            }
-            if (origin.isEmpty()) {
-                etOrigin.setError(getString(R.string.origin_required));
-                return;
-            }
-            if (destination.isEmpty()) {
-                etDestination.setError(getString(R.string.destination_required));
-                return;
-            }
+                if (name.isEmpty()) {
+                    etName.setError(getString(R.string.name_required));
+                    return true;
+                }
+                if (origin.isEmpty()) {
+                    etOrigin.setError(getString(R.string.origin_required));
+                    return true;
+                }
+                if (destination.isEmpty()) {
+                    etDestination.setError(getString(R.string.destination_required));
+                    return true;
+                }
 
-            if (isEdit) {
-                AppExecutors.diskIO(() -> {
-                    Route route = AppDatabase.getInstance(requireContext()).routeDao().getById(routeId);
-                    if (route != null) {
-                        route.name = name;
-                        route.origin = origin;
-                        route.destination = destination;
-                        AppDatabase.getInstance(requireContext()).routeDao().update(route);
-                    }
-                });
-            } else {
-                Route route = new Route();
-                route.name = name;
-                route.origin = origin;
-                route.destination = destination;
-                AppExecutors.diskIO(() -> {
-                    AppDatabase.getInstance(requireContext()).routeDao().insert(route);
-                });
-            }
+                if (isEdit) {
+                    AppExecutors.diskIO(() -> {
+                        Route route = AppDatabase.getInstance(requireContext()).routeDao().getById(routeId);
+                        if (route != null) {
+                            route.name = name;
+                            route.origin = origin;
+                            route.destination = destination;
+                            AppDatabase.getInstance(requireContext()).routeDao().update(route);
+                        }
+                    });
+                } else {
+                    Route route = new Route();
+                    route.name = name;
+                    route.origin = origin;
+                    route.destination = destination;
+                    AppExecutors.diskIO(() -> {
+                        AppDatabase.getInstance(requireContext()).routeDao().insert(route);
+                    });
+                }
 
-            Toast.makeText(requireContext(),
-                    isEdit ? R.string.route_updated : R.string.route_saved,
-                    Toast.LENGTH_SHORT).show();
-            getParentFragmentManager().popBackStack();
+                Toast.makeText(requireContext(),
+                        isEdit ? R.string.route_updated : R.string.route_saved,
+                        Toast.LENGTH_SHORT).show();
+                getParentFragmentManager().popBackStack();
+                return true;
+            }
+            return false;
         });
     }
 }

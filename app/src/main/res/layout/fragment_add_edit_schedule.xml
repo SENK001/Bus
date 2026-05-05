@@ -9,49 +9,52 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        app:titleTextColor="@android:color/white"
-        app:navigationIconTint="@color/white"
-        app:navigationIcon="?attr/homeAsUpIndicator" />
+        android:background="@android:color/transparent"
+        app:titleTextColor="@android:color/black"
+        app:navigationIconTint="@color/black"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:menu="@menu/menu_add_edit" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:gravity="center"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="16dp">
 
+        <com.itheima.wheelpicker.WheelPicker
+            android:id="@+id/wheel_hour"
+            android:layout_width="120dp"
+            android:layout_height="200dp"
+            app:wheel_atmospheric="true"
+            app:wheel_curved="true"
+            app:wheel_cyclic="true"
+            app:wheel_item_text_color="@color/text_gray"
+            app:wheel_selected_item_text_color="@color/black"
+            app:wheel_item_text_size="36sp"
+        />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/departure_time_hint"
-            android:textSize="16sp" />
-
-        <Button
-            android:id="@+id/btn_pick_departure"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/pick_departure" />
-
-        <TextView
-            android:id="@+id/tv_departure_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/not_set"
-            android:textSize="36sp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginHorizontal="8dp"
+            android:text=":"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
-    </LinearLayout>
+        <com.itheima.wheelpicker.WheelPicker
+            android:id="@+id/wheel_minute"
+            android:layout_width="120dp"
+            android:layout_height="200dp"
+            app:wheel_atmospheric="true"
+            app:wheel_curved="true"
+            app:wheel_cyclic="true"
+            app:wheel_item_text_color="@color/text_gray"
+            app:wheel_selected_item_text_color="@color/black"
+            app:wheel_item_text_size="36sp"
+        />
 
-    <Button
-        android:id="@+id/btn_save"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="@string/save" />
+    </LinearLayout>
 
 </LinearLayout>

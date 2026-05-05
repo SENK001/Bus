@@ -1,5 +1,6 @@
 package com.senk.bus.ui;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,6 +42,10 @@ public class ScheduleListFragment extends Fragment {
 
     private static final String ARG_ROUTE_ID = "route_id";
     private static final long REFRESH_INTERVAL = 60_000L;
+    private static final int MAX_PADDING_DP = 50;
+    private static final int MIN_PADDING_DP = 5;
+    private static final float MAX_TEXT_SP = 20f;
+    private static final float MIN_TEXT_SP = 14f;
 
     private int routeId;
     private ScheduleAdapter adapter;
@@ -111,6 +116,13 @@ public class ScheduleListFragment extends Fragment {
         recyclerView.setAdapter(adapter);
 
         adapter.setOnScheduleLongClickListener((schedule, anchor) -> showPopupMenu(schedule, anchor));
+
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                updateBannerStyle(rv.computeVerticalScrollOffset());
+            }
+        });
 
         AppDatabase.getInstance(requireContext()).scheduleDao()
                 .getSchedulesForRoute(routeId)
@@ -187,7 +199,7 @@ public class ScheduleListFragment extends Fragment {
     }
 
     private void deleteSchedule(Schedule schedule) {
-        new android.app.AlertDialog.Builder(requireContext())
+        new AlertDialog.Builder(requireContext())
                 .setTitle(R.string.delete)
                 .setMessage(R.string.confirm_delete_schedule)
                 .setPositiveButton(R.string.delete, (d, w) -> {
@@ -203,12 +215,54 @@ public class ScheduleListFragment extends Fragment {
         String now = getNow();
         for (Schedule s : schedules) {
             if (s.departureTime.compareTo(now) >= 0) {
-                banner.setText(getString(R.string.next_departure_format, s.departureTime));
+                String remaining = calcRemaining(now, s.departureTime);
+                if (remaining.equals(getString(R.string.depart_now))) {
+                    banner.setText(remaining);
+                } else {
+                    banner.setText(getString(R.string.next_departure_format, remaining));
+                }
                 banner.setVisibility(View.VISIBLE);
                 return;
             }
         }
         banner.setVisibility(View.GONE);
+    }
+
+    private void updateBannerStyle(int scrollY) {
+        float density = getResources().getDisplayMetrics().density;
+        float maxPadding = MAX_PADDING_DP * density;
+        float minPadding = MIN_PADDING_DP * density;
+        int maxScroll = (int) (100 * density);
+
+        float fraction = Math.min(1f, scrollY / (float) maxScroll);
+        int padding = (int) (maxPadding - fraction * (maxPadding - minPadding));
+        ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) banner.getLayoutParams();
+        lp.topMargin = padding;
+        lp.bottomMargin = padding;
+        banner.setLayoutParams(lp);
+
+        if (fraction >= 1f) {
+            float extraScroll = scrollY - maxScroll;
+            float fontRange = (MAX_TEXT_SP - MIN_TEXT_SP) * density;
+            float fontFraction = Math.min(1f, extraScroll / (100 * density));
+            banner.setTextSize(20 - fontFraction * (MAX_TEXT_SP - MIN_TEXT_SP));
+        } else {
+            banner.setTextSize(MAX_TEXT_SP);
+        }
+    }
+
+    private String calcRemaining(String from, String to) {
+        String[] f = from.split(":");
+        String[] t = to.split(":");
+        int diff = (Integer.parseInt(t[0]) * 60 + Integer.parseInt(t[1]))
+                 - (Integer.parseInt(f[0]) * 60 + Integer.parseInt(f[1]));
+        if (diff <= 0) return getString(R.string.depart_now);
+        int h = diff / 60;
+        int m = diff % 60;
+        if (h > 0) {
+            return getString(R.string.time_remaining_hm, h, m);
+        }
+        return getString(R.string.time_remaining_m, m);
     }
 
     private List<Schedule> sortSchedulesByProximity(List<Schedule> schedules) {

@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -12,12 +11,15 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.timepicker.MaterialTimePicker;
-import com.google.android.material.timepicker.TimeFormat;
+import com.itheima.wheelpicker.WheelPicker;
 import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
 import com.senk.bus.data.entity.Schedule;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
 
 public class AddEditScheduleFragment extends Fragment {
 
@@ -27,7 +29,10 @@ public class AddEditScheduleFragment extends Fragment {
 
     private int routeId;
     private int scheduleId = NO_ID;
-    private String departureTime;
+    private WheelPicker wheelHour;
+    private WheelPicker wheelMinute;
+    private int hour;
+    private int minute;
 
     public static AddEditScheduleFragment newInstance(int routeId) {
         return newInstance(routeId, NO_ID);
@@ -64,70 +69,68 @@ public class AddEditScheduleFragment extends Fragment {
         toolbar.setTitle(isEdit ? R.string.edit_schedule : R.string.add_schedule);
         toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
-        TextView tvDeparture = view.findViewById(R.id.tv_departure_time);
+        wheelHour = view.findViewById(R.id.wheel_hour);
+        wheelMinute = view.findViewById(R.id.wheel_minute);
+
+        List<String> hours = new ArrayList<>();
+        for (int i = 0; i < 24; i++) hours.add(String.format(Locale.getDefault(),"%02d", i));
+        List<String> minutes = new ArrayList<>();
+        for (int i = 0; i < 60; i++) minutes.add(String.format(Locale.getDefault(),"%02d", i));
+
+        wheelHour.setData(hours);
+        wheelMinute.setData(minutes);
+        LocalDateTime time = LocalDateTime.now();
+        hour = time.getHour();
+        minute = time.getMinute();
+        wheelHour.setSelectedItemPosition(hour);
+        wheelMinute.setSelectedItemPosition(minute);
+
+        wheelHour.setOnItemSelectedListener((picker, data, position) -> hour = position);
+        wheelMinute.setOnItemSelectedListener((picker, data, position) -> minute = position);
 
         if (isEdit) {
             AppExecutors.diskIO(() -> {
                 Schedule schedule = AppDatabase.getInstance(requireContext())
                         .scheduleDao().getById(scheduleId);
-                if (schedule != null && getView() != null) {
-                    departureTime = schedule.departureTime;
-                    requireActivity().runOnUiThread(() ->
-                            tvDeparture.setText(departureTime));
+                if (schedule != null && getView() != null && schedule.departureTime.contains(":")) {
+                    String[] parts = schedule.departureTime.split(":");
+                    hour = Integer.parseInt(parts[0]);
+                    minute = Integer.parseInt(parts[1]);
+                    requireActivity().runOnUiThread(() -> {
+                        wheelHour.setSelectedItemPosition(hour);
+                        wheelMinute.setSelectedItemPosition(minute);
+                    });
                 }
             });
         }
 
-        view.findViewById(R.id.btn_pick_departure).setOnClickListener(v -> {
-            int hour = 8, minute = 0;
-            if (departureTime != null && departureTime.contains(":")) {
-                String[] parts = departureTime.split(":");
-                hour = Integer.parseInt(parts[0]);
-                minute = Integer.parseInt(parts[1]);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_save) {
+                String departureTime = String.format(Locale.getDefault(),"%02d:%02d", hour, minute);
+
+                if (isEdit) {
+                    AppExecutors.diskIO(() -> {
+                        Schedule schedule = AppDatabase.getInstance(requireContext())
+                                .scheduleDao().getById(scheduleId);
+                        if (schedule != null) {
+                            schedule.departureTime = departureTime;
+                            AppDatabase.getInstance(requireContext()).scheduleDao().update(schedule);
+                        }
+                    });
+                } else {
+                    Schedule schedule = new Schedule();
+                    schedule.routeId = routeId;
+                    schedule.departureTime = departureTime;
+                    AppExecutors.diskIO(() -> AppDatabase.getInstance(requireContext()).scheduleDao().insert(schedule));
+                }
+
+                Toast.makeText(requireContext(),
+                        isEdit ? R.string.schedule_updated : R.string.schedule_saved,
+                        Toast.LENGTH_SHORT).show();
+                getParentFragmentManager().popBackStack();
+                return true;
             }
-            MaterialTimePicker picker = new MaterialTimePicker.Builder()
-                    .setTimeFormat(TimeFormat.CLOCK_24H)
-                    .setHour(hour)
-                    .setMinute(minute)
-                    .setTitleText(R.string.pick_time)
-                    .build();
-
-            picker.addOnPositiveButtonClickListener(v2 -> {
-                departureTime = String.format("%02d:%02d", picker.getHour(), picker.getMinute());
-                tvDeparture.setText(departureTime);
-            });
-
-            picker.show(getChildFragmentManager(), "time_picker");
-        });
-
-        view.findViewById(R.id.btn_save).setOnClickListener(v -> {
-            if (departureTime == null || departureTime.isEmpty()) {
-                Toast.makeText(requireContext(), R.string.set_departure_time, Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (isEdit) {
-                AppExecutors.diskIO(() -> {
-                    Schedule schedule = AppDatabase.getInstance(requireContext())
-                            .scheduleDao().getById(scheduleId);
-                    if (schedule != null) {
-                        schedule.departureTime = departureTime;
-                        AppDatabase.getInstance(requireContext()).scheduleDao().update(schedule);
-                    }
-                });
-            } else {
-                Schedule schedule = new Schedule();
-                schedule.routeId = routeId;
-                schedule.departureTime = departureTime;
-                AppExecutors.diskIO(() -> {
-                    AppDatabase.getInstance(requireContext()).scheduleDao().insert(schedule);
-                });
-            }
-
-            Toast.makeText(requireContext(),
-                    isEdit ? R.string.schedule_updated : R.string.schedule_saved,
-                    Toast.LENGTH_SHORT).show();
-            getParentFragmentManager().popBackStack();
+            return false;
         });
     }
 }

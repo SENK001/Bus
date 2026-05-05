@@ -3,9 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_add_schedule"
-        android:icon="@drawable/plus"
-        android:title="@string/add_schedule"
-        app:showAsAction="ifRoom" />
+        android:id="@+id/action_save"
+        android:icon="@drawable/check"
+        android:title="@string/save"
+        app:showAsAction="always" />
 
 </menu>
