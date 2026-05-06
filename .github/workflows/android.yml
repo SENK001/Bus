@@ -18,6 +18,8 @@ jobs:
          java-version: 17
      - name: 安装 Android SDK
        uses: android-actions/setup-android@v3
+     - name: 设置构建脚本权限
+       run: chmod +x gradlew
      - name: 构建 APK
        uses: gradle/gradle-build-action@v2
        with:
