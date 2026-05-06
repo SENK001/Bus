@@ -11,17 +11,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.itheima.wheelpicker.WheelPicker;
 import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
 import com.senk.bus.data.entity.Schedule;
 
-import android.graphics.Typeface;
-
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
+import java.util.Locale;
 
 public class AddEditScheduleFragment extends Fragment {
 
@@ -31,10 +27,7 @@ public class AddEditScheduleFragment extends Fragment {
 
     private int routeId;
     private int scheduleId = NO_ID;
-    private WheelPicker wheelHour;
-    private WheelPicker wheelMinute;
-    private int hour;
-    private int minute;
+    private WheelTimePicker timePicker;
 
     public static AddEditScheduleFragment newInstance(int routeId) {
         return newInstance(routeId, NO_ID);
@@ -71,23 +64,13 @@ public class AddEditScheduleFragment extends Fragment {
         toolbar.setTitle(isEdit ? R.string.edit_schedule : R.string.add_schedule);
         toolbar.setNavigationOnClickListener(v -> getParentFragmentManager().popBackStack());
 
-        wheelHour = view.findViewById(R.id.wheel_hour);
-        wheelMinute = view.findViewById(R.id.wheel_minute);
+        timePicker = new WheelTimePicker(
+                view.findViewById(R.id.wheel_hour),
+                view.findViewById(R.id.wheel_minute),
+                requireContext());
 
-        List<String> hours = Arrays.asList(requireActivity().getResources().getStringArray(R.array.hours));
-        List<String> minutes = Arrays.asList(requireActivity().getResources().getStringArray(R.array.minutes));
-        wheelHour.setData(hours);
-        wheelMinute.setData(minutes);
-        wheelHour.setTypeface(Typeface.MONOSPACE);
-        wheelMinute.setTypeface(Typeface.MONOSPACE);
         LocalDateTime time = LocalDateTime.now();
-        hour = time.getHour();
-        minute = time.getMinute();
-        wheelHour.setSelectedItemPosition(hour);
-        wheelMinute.setSelectedItemPosition(minute);
-
-        wheelHour.setOnItemSelectedListener((picker, data, position) -> hour = position);
-        wheelMinute.setOnItemSelectedListener((picker, data, position) -> minute = position);
+        timePicker.setTime(time.getHour(), time.getMinute());
 
         if (isEdit) {
             AppExecutors.diskIO(() -> {
@@ -95,19 +78,16 @@ public class AddEditScheduleFragment extends Fragment {
                         .scheduleDao().getById(scheduleId);
                 if (schedule != null && getView() != null && schedule.departureTime.contains(":")) {
                     String[] parts = schedule.departureTime.split(":");
-                    hour = Integer.parseInt(parts[0]);
-                    minute = Integer.parseInt(parts[1]);
-                    requireActivity().runOnUiThread(() -> {
-                        wheelHour.setSelectedItemPosition(hour);
-                        wheelMinute.setSelectedItemPosition(minute);
-                    });
+                    int h = Integer.parseInt(parts[0]);
+                    int m = Integer.parseInt(parts[1]);
+                    requireActivity().runOnUiThread(() -> timePicker.setTime(h, m));
                 }
             });
         }
 
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_save) {
-                String departureTime = String.format(Locale.getDefault(),"%02d:%02d", hour, minute);
+                String departureTime = timePicker.getFormattedTime();
 
                 if (isEdit) {
                     AppExecutors.diskIO(() -> {

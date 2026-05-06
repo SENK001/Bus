@@ -1,7 +1,6 @@
 package com.senk.bus.ui;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -11,7 +10,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,13 +17,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.Lifecycle;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.senk.bus.MainActivity;
 import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
@@ -117,7 +113,7 @@ public class ScheduleListFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        adapter.setOnScheduleLongClickListener((schedule, anchor) -> showPopupMenu(schedule, anchor));
+        adapter.setOnScheduleClickListener(this::showEditDialog);
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -172,57 +168,73 @@ public class ScheduleListFragment extends Fragment {
         }
     }
 
-    private void showPopupMenu(Schedule schedule, View anchor) {
-        PopupMenu popup = new PopupMenu(requireContext(), anchor);
-        popup.getMenu().add(0, 1, 0, R.string.edit);
-        popup.getMenu().add(0, 2, 1, R.string.delete);
+    private void showEditDialog(Schedule schedule) {
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_edit_schedule, null);
 
-        popup.setOnMenuItemClickListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == 1) {
-                QueryFragment parent = (QueryFragment) getParentFragment();
-                if (parent != null) {
-                    parent.navigateToEditSchedule(routeId, schedule.id);
-                }
-                return true;
-            } else if (itemId == 2) {
-                deleteSchedule(schedule);
-                return true;
-            }
-            return false;
+        WheelTimePicker timePicker = new WheelTimePicker(
+                dialogView.findViewById(R.id.wheel_hour),
+                dialogView.findViewById(R.id.wheel_minute),
+                requireContext());
+
+        if (schedule.departureTime.contains(":")) {
+            String[] parts = schedule.departureTime.split(":");
+            timePicker.setTime(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        }
+
+        TextView tvSubtitle = dialogView.findViewById(R.id.tv_subtitle);
+        tvSubtitle.setText(calcDepartIn(getNow(), schedule.departureTime));
+
+        timePicker.setOnTimeChangedListener((h, m) ->
+                tvSubtitle.setText(calcDepartIn(getNow(),
+                        String.format(Locale.getDefault(), "%02d:%02d", h, m))));
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        dialogView.findViewById(R.id.btn_delete).setOnClickListener(v -> {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.delete)
+                    .setMessage(R.string.confirm_delete_schedule)
+                    .setPositiveButton(R.string.delete, (d, w) -> {
+                        AppExecutors.diskIO(() ->
+                                AppDatabase.getInstance(requireContext()).scheduleDao().delete(schedule));
+                        Toast.makeText(requireContext(), R.string.schedule_deleted, Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
         });
 
-        popup.show();
-    }
+        dialogView.findViewById(R.id.btn_save).setOnClickListener(v -> {
+            String departureTime = timePicker.getFormattedTime();
+            AppExecutors.diskIO(() -> {
+                schedule.departureTime = departureTime;
+                AppDatabase.getInstance(requireContext()).scheduleDao().update(schedule);
+            });
+            Toast.makeText(requireContext(), R.string.schedule_updated, Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
 
-    private void deleteSchedule(Schedule schedule) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.delete)
-                .setMessage(R.string.confirm_delete_schedule)
-                .setPositiveButton(R.string.delete, (d, w) -> {
-                    AppExecutors.diskIO(() ->
-                            AppDatabase.getInstance(requireContext()).scheduleDao().delete(schedule));
-                    Toast.makeText(requireContext(), R.string.schedule_deleted, Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
+        dialog.show();
     }
 
     private void updateBanner(List<Schedule> schedules) {
         String now = getNow();
-        for (Schedule s : schedules) {
-            if (s.departureTime.compareTo(now) >= 0) {
-                String remaining = calcRemaining(now, s.departureTime);
-                if (remaining.equals(getString(R.string.depart_now))) {
-                    banner.setText(remaining);
-                } else {
-                    banner.setText(getString(R.string.next_departure_format, remaining));
-                }
-                banner.setVisibility(View.VISIBLE);
-                return;
+        if (!schedules.isEmpty()) {
+            Schedule s = schedules.get(0);
+            String remaining = calcRemaining(now, s.departureTime);
+            if (remaining.equals(getString(R.string.depart_now))) {
+                banner.setText(remaining);
+            } else {
+                banner.setText(getString(R.string.next_departure_format, remaining));
             }
+            banner.setVisibility(View.VISIBLE);
+        } else {
+            banner.setVisibility(View.GONE);
         }
-        banner.setVisibility(View.GONE);
     }
 
     private void updateBannerStyle(int scrollY) {
@@ -248,12 +260,29 @@ public class ScheduleListFragment extends Fragment {
         }
     }
 
-    private String calcRemaining(String from, String to) {
+    private int diffMinutes(String from, String to) {
         String[] f = from.split(":");
         String[] t = to.split(":");
         int diff = (Integer.parseInt(t[0]) * 60 + Integer.parseInt(t[1]))
                  - (Integer.parseInt(f[0]) * 60 + Integer.parseInt(f[1]));
-        if (diff <= 0) return getString(R.string.depart_now);
+        if (diff < 0) diff += 24 * 60;
+        return diff;
+    }
+
+    private String calcDepartIn(String from, String to) {
+        int diff = diffMinutes(from, to);
+        if (diff == 0) return getString(R.string.depart_now);
+        int h = diff / 60;
+        int m = diff % 60;
+        if (h > 0) {
+            return getString(R.string.depart_in_hm, h, m);
+        }
+        return getString(R.string.depart_in_m, m);
+    }
+
+    private String calcRemaining(String from, String to) {
+        int diff = diffMinutes(from, to);
+        if (diff == 0) return getString(R.string.depart_now);
         int h = diff / 60;
         int m = diff % 60;
         if (h > 0) {
@@ -264,18 +293,9 @@ public class ScheduleListFragment extends Fragment {
 
     private List<Schedule> sortSchedulesByProximity(List<Schedule> schedules) {
         String now = getNow();
-        List<Schedule> future = new ArrayList<>();
-        List<Schedule> past = new ArrayList<>();
-        for (Schedule s : schedules) {
-            if (s.departureTime.compareTo(now) >= 0) {
-                future.add(s);
-            } else {
-                past.add(s);
-            }
-        }
-        List<Schedule> result = new ArrayList<>(future);
-        result.addAll(past);
-        return result;
+        List<Schedule> sorted = new ArrayList<>(schedules);
+        sorted.sort((a, b) -> Integer.compare(diffMinutes(now, a.departureTime), diffMinutes(now, b.departureTime)));
+        return sorted;
     }
 
     private String getNow() {

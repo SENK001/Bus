@@ -31,6 +31,8 @@
     <string name="time_remaining_hm">%d小时%d分钟</string>
     <string name="time_remaining_m">%d分钟</string>
     <string name="depart_now">即将发车</string>
+    <string name="depart_in_hm">%1$d小时%2$d分钟后发车</string>
+    <string name="depart_in_m">%d分钟后发车</string>
     <string name="favorite">收藏</string>
     <string name="unfavorite">取消收藏</string>
     <string name="set_default">设为默认</string>

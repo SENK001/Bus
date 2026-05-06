@@ -11,25 +11,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.senk.bus.R;
 import com.senk.bus.data.entity.Schedule;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHolder> {
 
     private List<Schedule> schedules = new ArrayList<>();
     private int nextIndex = -1;
     private OnScheduleClickListener clickListener;
-    private OnScheduleLongClickListener longClickListener;
 
     public interface OnScheduleClickListener {
         void onScheduleClick(Schedule schedule);
-    }
-
-    public interface OnScheduleLongClickListener {
-        void onScheduleLongClick(Schedule schedule, View anchor);
     }
 
     public void setSchedules(List<Schedule> schedules) {
@@ -46,26 +38,8 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
         this.clickListener = listener;
     }
 
-    public void setOnScheduleLongClickListener(OnScheduleLongClickListener listener) {
-        this.longClickListener = listener;
-    }
-
     private void updateNextIndex() {
-        String now = getNow();
-        nextIndex = -1;
-        for (int i = 0; i < schedules.size(); i++) {
-            if (schedules.get(i).departureTime.compareTo(now) >= 0) {
-                nextIndex = i;
-                break;
-            }
-        }
-        if (nextIndex == -1 && !schedules.isEmpty()) {
-            nextIndex = 0;
-        }
-    }
-
-    private String getNow() {
-        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+        nextIndex = schedules.isEmpty() ? -1 : 0;
     }
 
     @NonNull
@@ -84,11 +58,6 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
 
         holder.itemView.setOnClickListener(v -> {
             if (clickListener != null) clickListener.onScheduleClick(schedule);
-        });
-
-        holder.itemView.setOnLongClickListener(v -> {
-            if (longClickListener != null) longClickListener.onScheduleLongClick(schedule, v);
-            return true;
         });
     }
 
