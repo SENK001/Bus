@@ -40,7 +40,7 @@ public abstract class RouteDao {
         clearAllDefaults();
         Route route = getById(routeId);
         if (route != null) {
-            route.isDefault = true;
+            route.setDefault(true);
             update(route);
         }
     }

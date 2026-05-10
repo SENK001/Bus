@@ -94,11 +94,11 @@ public class RouteListFragment extends Fragment {
         adapter.setOnRouteClickListener(route -> {
             QueryFragment parent = (QueryFragment) getParentFragment();
             if (parent != null) {
-                parent.navigateToScheduleList(route.id, route.name);
+                parent.navigateToScheduleList(route.getId(), route.getName());
             }
         });
 
-        adapter.setOnRouteLongClickListener((route, anchor) -> showPopupMenu(route, anchor));
+        adapter.setOnRouteLongClickListener(this::showPopupMenu);
 
         AppDatabase.getInstance(requireContext()).routeDao().getAllRoutes()
                 .observe(getViewLifecycleOwner(), routes -> {
@@ -114,21 +114,21 @@ public class RouteListFragment extends Fragment {
             String now = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
             AppDatabase db = AppDatabase.getInstance(requireContext());
             for (Route route : routes) {
-                List<Schedule> schedules = db.scheduleDao().getSchedulesForRouteSync(route.id);
+                List<Schedule> schedules = db.scheduleDao().getSchedulesForRouteSync(route.getId());
                 String next = null;
                 for (Schedule s : schedules) {
-                    if (s.departureTime.compareTo(now) >= 0) {
-                        next = s.departureTime;
+                    if (s.getDepartureTime().compareTo(now) >= 0) {
+                        next = s.getDepartureTime();
                         break;
                     }
                 }
                 if (next == null && !schedules.isEmpty()) {
-                    next = schedules.get(0).departureTime;
+                    next = schedules.get(0).getDepartureTime();
                 }
                 final String nextTime = next;
                 if (nextTime != null) {
                     requireActivity().runOnUiThread(() -> {
-                        adapter.setNextTime(route.id, nextTime);
+                        adapter.setNextTime(route.getId(), nextTime);
                     });
                 }
             }
@@ -138,8 +138,8 @@ public class RouteListFragment extends Fragment {
 
     private void showPopupMenu(Route route, View anchor) {
         PopupMenu popup = new PopupMenu(requireContext(), anchor);
-        popup.getMenu().add(0, 1, 0, route.isFavorite ? R.string.unfavorite : R.string.favorite);
-        popup.getMenu().add(0, 2, 1, route.isDefault ? R.string.unset_default : R.string.set_default);
+        popup.getMenu().add(0, 1, 0, route.isFavorite() ? R.string.unfavorite : R.string.favorite);
+        popup.getMenu().add(0, 2, 1, route.isDefault() ? R.string.unset_default : R.string.set_default);
         popup.getMenu().add(0, 3, 2, R.string.edit);
         popup.getMenu().add(0, 4, 3, R.string.delete);
 
@@ -148,23 +148,23 @@ public class RouteListFragment extends Fragment {
             if (itemId == 1) {
                 AppExecutors.diskIO(() ->
                         AppDatabase.getInstance(requireContext())
-                                .routeDao().setFavorite(route.id, !route.isFavorite));
+                                .routeDao().setFavorite(route.getId(), !route.isFavorite()));
                 return true;
             } else if (itemId == 2) {
-                if (route.isDefault) {
+                if (route.isDefault()) {
                     AppExecutors.diskIO(() ->
                             AppDatabase.getInstance(requireContext())
                                     .routeDao().clearAllDefaults());
                 } else {
                     AppExecutors.diskIO(() ->
                             AppDatabase.getInstance(requireContext())
-                                    .routeDao().setDefault(route.id));
+                                    .routeDao().setDefault(route.getId()));
                 }
                 return true;
             } else if (itemId == 3) {
                 QueryFragment parent = (QueryFragment) getParentFragment();
                 if (parent != null) {
-                    parent.navigateToEditRoute(route.id);
+                    parent.navigateToEditRoute(route.getId());
                 }
                 return true;
             } else if (itemId == 4) {
@@ -180,14 +180,14 @@ public class RouteListFragment extends Fragment {
     private void deleteRoute(Route route) {
         new android.app.AlertDialog.Builder(requireContext())
                 .setTitle(R.string.delete)
-                .setMessage(getString(R.string.confirm_delete_route, route.name))
+                .setMessage(getString(R.string.confirm_delete_route, route.getName()))
                 .setPositiveButton(R.string.delete, (d, w) -> {
                     AppExecutors.diskIO(() ->{
                                 AppDatabase.getInstance(requireContext()).routeDao().delete(route);
-                                AppDatabase.getInstance(requireContext()).scheduleDao().deleteByRouteId(route.id);
+                                AppDatabase.getInstance(requireContext()).scheduleDao().deleteByRouteId(route.getId());
                             });
                     Toast.makeText(requireContext(),
-                            getString(R.string.route_deleted, route.name),
+                            getString(R.string.route_deleted, route.getName()),
                             Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton(R.string.cancel, null)
@@ -204,17 +204,17 @@ public class RouteListFragment extends Fragment {
 
                 for (Route route : routes) {
                     JSONObject routeObj = new JSONObject();
-                    routeObj.put("name", route.name);
-                    routeObj.put("origin", route.origin);
-                    routeObj.put("destination", route.destination);
-                    routeObj.put("isFavorite", route.isFavorite);
-                    routeObj.put("isDefault", route.isDefault);
+                    routeObj.put("name", route.getName());
+                    routeObj.put("origin", route.getOrigin());
+                    routeObj.put("destination", route.getDestination());
+                    routeObj.put("isFavorite", route.isFavorite());
+                    routeObj.put("isDefault", route.isDefault());
 
-                    List<Schedule> schedules = db.scheduleDao().getSchedulesForRouteSync(route.id);
+                    List<Schedule> schedules = db.scheduleDao().getSchedulesForRouteSync(route.getId());
                     JSONArray schedulesArray = new JSONArray();
                     for (Schedule schedule : schedules) {
                         JSONObject scheduleObj = new JSONObject();
-                        scheduleObj.put("departureTime", schedule.departureTime);
+                        scheduleObj.put("departureTime", schedule.getDepartureTime());
                         schedulesArray.put(scheduleObj);
                     }
                     routeObj.put("schedules", schedulesArray);
@@ -266,19 +266,19 @@ public class RouteListFragment extends Fragment {
                 for (int i = 0; i < routesArray.length(); i++) {
                     JSONObject routeObj = routesArray.getJSONObject(i);
                     Route route = new Route();
-                    route.name = routeObj.getString("name");
-                    route.origin = routeObj.getString("origin");
-                    route.destination = routeObj.getString("destination");
-                    route.isFavorite = routeObj.optBoolean("isFavorite", false);
-                    route.isDefault = routeObj.optBoolean("isDefault", false);
+                    route.setName(routeObj.getString("name"));
+                    route.setOrigin(routeObj.getString("origin"));
+                    route.setDestination(routeObj.getString("destination"));
+                    route.setFavorite(routeObj.optBoolean("isFavorite", false));
+                    route.setDefault(routeObj.optBoolean("isDefault", false));
                     long newId = db.routeDao().insert(route);
 
                     JSONArray schedulesArray = routeObj.getJSONArray("schedules");
                     for (int j = 0; j < schedulesArray.length(); j++) {
                         JSONObject scheduleObj = schedulesArray.getJSONObject(j);
                         Schedule schedule = new Schedule();
-                        schedule.routeId = newId;
-                        schedule.departureTime = scheduleObj.getString("departureTime");
+                        schedule.setRouteId(newId);
+                        schedule.setDepartureTime(scheduleObj.getString("departureTime"));
                         db.scheduleDao().insert(schedule);
                     }
                 }

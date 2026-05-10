@@ -53,7 +53,7 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Schedule schedule = schedules.get(position);
-        holder.tvDeparture.setText(schedule.departureTime);
+        holder.tvDeparture.setText(schedule.getDepartureTime());
         holder.tvNextBadge.setVisibility(position == nextIndex ? View.VISIBLE : View.GONE);
 
         holder.itemView.setOnClickListener(v -> {
@@ -66,7 +66,7 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
         return schedules.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvDeparture;
         TextView tvNextBadge;
 

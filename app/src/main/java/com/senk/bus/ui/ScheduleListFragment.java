@@ -177,13 +177,13 @@ public class ScheduleListFragment extends Fragment {
                 dialogView.findViewById(R.id.wheel_minute),
                 requireContext());
 
-        if (schedule.departureTime.contains(":")) {
-            String[] parts = schedule.departureTime.split(":");
+        if (schedule.getDepartureTime().contains(":")) {
+            String[] parts = schedule.getDepartureTime().split(":");
             timePicker.setTime(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
         }
 
         TextView tvSubtitle = dialogView.findViewById(R.id.tv_subtitle);
-        tvSubtitle.setText(calcDepartIn(getNow(), schedule.departureTime));
+        tvSubtitle.setText(calcDepartIn(getNow(), schedule.getDepartureTime()));
 
         timePicker.setOnTimeChangedListener((h, m) ->
                 tvSubtitle.setText(calcDepartIn(getNow(),
@@ -211,7 +211,7 @@ public class ScheduleListFragment extends Fragment {
         dialogView.findViewById(R.id.btn_save).setOnClickListener(v -> {
             String departureTime = timePicker.getFormattedTime();
             AppExecutors.diskIO(() -> {
-                schedule.departureTime = departureTime;
+                schedule.setDepartureTime(departureTime);
                 AppDatabase.getInstance(requireContext()).scheduleDao().update(schedule);
             });
             Toast.makeText(requireContext(), R.string.schedule_updated, Toast.LENGTH_SHORT).show();
@@ -225,7 +225,7 @@ public class ScheduleListFragment extends Fragment {
         String now = getNow();
         if (!schedules.isEmpty()) {
             Schedule s = schedules.get(0);
-            String remaining = calcRemaining(now, s.departureTime);
+            String remaining = calcRemaining(now, s.getDepartureTime());
             if (remaining.equals(getString(R.string.depart_now))) {
                 banner.setText(remaining);
             } else {
@@ -294,7 +294,7 @@ public class ScheduleListFragment extends Fragment {
     private List<Schedule> sortSchedulesByProximity(List<Schedule> schedules) {
         String now = getNow();
         List<Schedule> sorted = new ArrayList<>(schedules);
-        sorted.sort((a, b) -> Integer.compare(diffMinutes(now, a.departureTime), diffMinutes(now, b.departureTime)));
+        sorted.sort((a, b) -> Integer.compare(diffMinutes(now, a.getDepartureTime()), diffMinutes(now, b.getDepartureTime())));
         return sorted;
     }
 

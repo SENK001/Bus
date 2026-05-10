@@ -76,8 +76,8 @@ public class AddEditScheduleFragment extends Fragment {
             AppExecutors.diskIO(() -> {
                 Schedule schedule = AppDatabase.getInstance(requireContext())
                         .scheduleDao().getById(scheduleId);
-                if (schedule != null && getView() != null && schedule.departureTime.contains(":")) {
-                    String[] parts = schedule.departureTime.split(":");
+                if (schedule != null && getView() != null && schedule.getDepartureTime().contains(":")) {
+                    String[] parts = schedule.getDepartureTime().split(":");
                     int h = Integer.parseInt(parts[0]);
                     int m = Integer.parseInt(parts[1]);
                     requireActivity().runOnUiThread(() -> timePicker.setTime(h, m));
@@ -94,14 +94,14 @@ public class AddEditScheduleFragment extends Fragment {
                         Schedule schedule = AppDatabase.getInstance(requireContext())
                                 .scheduleDao().getById(scheduleId);
                         if (schedule != null) {
-                            schedule.departureTime = departureTime;
+                            schedule.setDepartureTime(departureTime);
                             AppDatabase.getInstance(requireContext()).scheduleDao().update(schedule);
                         }
                     });
                 } else {
                     Schedule schedule = new Schedule();
-                    schedule.routeId = routeId;
-                    schedule.departureTime = departureTime;
+                    schedule.setRouteId(routeId);
+                    schedule.setDepartureTime(departureTime);
                     AppExecutors.diskIO(() -> AppDatabase.getInstance(requireContext()).scheduleDao().insert(schedule));
                 }
 

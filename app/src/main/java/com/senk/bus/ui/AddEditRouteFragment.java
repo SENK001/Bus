@@ -67,9 +67,9 @@ public class AddEditRouteFragment extends Fragment {
                 Route route = AppDatabase.getInstance(requireContext()).routeDao().getById(routeId);
                 if (route != null && getView() != null) {
                     requireActivity().runOnUiThread(() -> {
-                        etName.setText(route.name);
-                        etOrigin.setText(route.origin);
-                        etDestination.setText(route.destination);
+                        etName.setText(route.getName());
+                        etOrigin.setText(route.getOrigin());
+                        etDestination.setText(route.getDestination());
                     });
                 }
             });
@@ -98,17 +98,17 @@ public class AddEditRouteFragment extends Fragment {
                     AppExecutors.diskIO(() -> {
                         Route route = AppDatabase.getInstance(requireContext()).routeDao().getById(routeId);
                         if (route != null) {
-                            route.name = name;
-                            route.origin = origin;
-                            route.destination = destination;
+                            route.setName(name);
+                            route.setOrigin(origin);
+                            route.setDestination(destination);
                             AppDatabase.getInstance(requireContext()).routeDao().update(route);
                         }
                     });
                 } else {
                     Route route = new Route();
-                    route.name = name;
-                    route.origin = origin;
-                    route.destination = destination;
+                    route.setName(name);
+                    route.setOrigin(origin);
+                    route.setDestination(destination);
                     AppExecutors.diskIO(() -> {
                         AppDatabase.getInstance(requireContext()).routeDao().insert(route);
                     });

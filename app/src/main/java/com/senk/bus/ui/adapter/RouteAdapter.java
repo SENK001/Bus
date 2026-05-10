@@ -70,10 +70,10 @@ public class RouteAdapter extends RecyclerView.Adapter<RouteAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Route route = routes.get(position);
-        holder.tvName.setText(route.name);
-        holder.tvDesc.setText(route.origin + " → " + route.destination);
+        holder.tvName.setText(route.getName());
+        holder.tvDesc.setText(route.getOrigin() + " → " + route.getDestination());
 
-        String nextTime = nextTimes.get(route.id);
+        String nextTime = nextTimes.get(route.getId());
         if (nextTime != null) {
             holder.tvNextTime.setText(nextTime);
             holder.tvNextTime.setVisibility(View.VISIBLE);
