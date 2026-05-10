@@ -182,8 +182,10 @@ public class RouteListFragment extends Fragment {
                 .setTitle(R.string.delete)
                 .setMessage(getString(R.string.confirm_delete_route, route.name))
                 .setPositiveButton(R.string.delete, (d, w) -> {
-                    AppExecutors.diskIO(() ->
-                            AppDatabase.getInstance(requireContext()).routeDao().delete(route));
+                    AppExecutors.diskIO(() ->{
+                                AppDatabase.getInstance(requireContext()).routeDao().delete(route);
+                                AppDatabase.getInstance(requireContext()).scheduleDao().deleteByRouteId(route.id);
+                            });
                     Toast.makeText(requireContext(),
                             getString(R.string.route_deleted, route.name),
                             Toast.LENGTH_SHORT).show();
@@ -199,31 +201,28 @@ public class RouteListFragment extends Fragment {
                 List<Route> routes = db.routeDao().getAllRoutesSync();
 
                 JSONArray routesArray = new JSONArray();
-                JSONArray schedulesArray = new JSONArray();
 
-                for (int i = 0; i < routes.size(); i++) {
-                    Route route = routes.get(i);
+                for (Route route : routes) {
                     JSONObject routeObj = new JSONObject();
-                    routeObj.put("idx", i);
                     routeObj.put("name", route.name);
                     routeObj.put("origin", route.origin);
                     routeObj.put("destination", route.destination);
                     routeObj.put("isFavorite", route.isFavorite);
                     routeObj.put("isDefault", route.isDefault);
-                    routesArray.put(routeObj);
 
                     List<Schedule> schedules = db.scheduleDao().getSchedulesForRouteSync(route.id);
+                    JSONArray schedulesArray = new JSONArray();
                     for (Schedule schedule : schedules) {
                         JSONObject scheduleObj = new JSONObject();
-                        scheduleObj.put("routeIdx", i);
                         scheduleObj.put("departureTime", schedule.departureTime);
                         schedulesArray.put(scheduleObj);
                     }
+                    routeObj.put("schedules", schedulesArray);
+                    routesArray.put(routeObj);
                 }
 
                 JSONObject data = new JSONObject();
                 data.put("routes", routesArray);
-                data.put("schedules", schedulesArray);
 
                 String json = data.toString();
                 String base64 = Base64.encodeToString(json.getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP);
@@ -263,9 +262,6 @@ public class RouteListFragment extends Fragment {
 
                 AppDatabase db = AppDatabase.getInstance(requireContext());
                 JSONArray routesArray = data.getJSONArray("routes");
-                JSONArray schedulesArray = data.getJSONArray("schedules");
-
-                Map<Integer, Integer> idxToNewId = new HashMap<>();
 
                 for (int i = 0; i < routesArray.length(); i++) {
                     JSONObject routeObj = routesArray.getJSONObject(i);
@@ -276,16 +272,15 @@ public class RouteListFragment extends Fragment {
                     route.isFavorite = routeObj.optBoolean("isFavorite", false);
                     route.isDefault = routeObj.optBoolean("isDefault", false);
                     long newId = db.routeDao().insert(route);
-                    idxToNewId.put(routeObj.getInt("idx"), (int) newId);
-                }
 
-                for (int i = 0; i < schedulesArray.length(); i++) {
-                    JSONObject scheduleObj = schedulesArray.getJSONObject(i);
-                    Schedule schedule = new Schedule();
-                    int routeIdx = scheduleObj.getInt("routeIdx");
-                    schedule.routeId = idxToNewId.get(routeIdx);
-                    schedule.departureTime = scheduleObj.getString("departureTime");
-                    db.scheduleDao().insert(schedule);
+                    JSONArray schedulesArray = routeObj.getJSONArray("schedules");
+                    for (int j = 0; j < schedulesArray.length(); j++) {
+                        JSONObject scheduleObj = schedulesArray.getJSONObject(j);
+                        Schedule schedule = new Schedule();
+                        schedule.routeId = newId;
+                        schedule.departureTime = scheduleObj.getString("departureTime");
+                        db.scheduleDao().insert(schedule);
+                    }
                 }
 
                 requireActivity().runOnUiThread(() ->

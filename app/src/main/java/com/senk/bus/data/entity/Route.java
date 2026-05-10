@@ -7,16 +7,16 @@ import androidx.room.PrimaryKey;
 @Entity(tableName = "routes")
 public class Route {
     @PrimaryKey(autoGenerate = true)
-    public int id;
+    public long id;
 
     @NonNull
-    public String name;
+    public String name = "";
 
     @NonNull
-    public String origin;
+    public String origin = "";
 
     @NonNull
-    public String destination;
+    public String destination = "";
 
     public boolean isFavorite;
 

@@ -44,16 +44,16 @@ public class ScheduleListFragment extends Fragment {
     private static final float MAX_TEXT_SP = 20f;
     private static final float MIN_TEXT_SP = 14f;
 
-    private int routeId;
+    private long routeId;
     private ScheduleAdapter adapter;
     private TextView banner;
     private Handler handler;
     private Runnable refreshRunnable;
 
-    public static ScheduleListFragment newInstance(int routeId, String routeName) {
+    public static ScheduleListFragment newInstance(long routeId, String routeName) {
         ScheduleListFragment fragment = new ScheduleListFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_ROUTE_ID, routeId);
+        args.putLong(ARG_ROUTE_ID, routeId);
         args.putString(ARG_ROUTE_NAME, routeName);
         fragment.setArguments(args);
         return fragment;
@@ -63,7 +63,7 @@ public class ScheduleListFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            routeId = getArguments().getInt(ARG_ROUTE_ID);
+            routeId = getArguments().getLong(ARG_ROUTE_ID);
         }
         handler = new Handler(Looper.getMainLooper());
     }

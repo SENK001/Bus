@@ -23,21 +23,21 @@ public class AddEditScheduleFragment extends Fragment {
 
     private static final String ARG_ROUTE_ID = "route_id";
     private static final String ARG_SCHEDULE_ID = "schedule_id";
-    private static final int NO_ID = -1;
+    private static final long NO_ID = -1;
 
-    private int routeId;
-    private int scheduleId = NO_ID;
+    private Long routeId;
+    private Long scheduleId = NO_ID;
     private WheelTimePicker timePicker;
 
-    public static AddEditScheduleFragment newInstance(int routeId) {
+    public static AddEditScheduleFragment newInstance(long routeId) {
         return newInstance(routeId, NO_ID);
     }
 
-    public static AddEditScheduleFragment newInstance(int routeId, int scheduleId) {
+    public static AddEditScheduleFragment newInstance(long routeId, long scheduleId) {
         AddEditScheduleFragment fragment = new AddEditScheduleFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_ROUTE_ID, routeId);
-        args.putInt(ARG_SCHEDULE_ID, scheduleId);
+        args.putLong(ARG_ROUTE_ID, routeId);
+        args.putLong(ARG_SCHEDULE_ID, scheduleId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -54,8 +54,8 @@ public class AddEditScheduleFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (getArguments() != null) {
-            routeId = getArguments().getInt(ARG_ROUTE_ID);
-            scheduleId = getArguments().getInt(ARG_SCHEDULE_ID, NO_ID);
+            routeId = getArguments().getLong(ARG_ROUTE_ID);
+            scheduleId = getArguments().getLong(ARG_SCHEDULE_ID, NO_ID);
         }
 
         boolean isEdit = scheduleId != NO_ID;

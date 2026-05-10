@@ -47,7 +47,7 @@ public class QueryFragment extends Fragment {
         );
     }
 
-    public void navigateToScheduleList(int routeId, String routeName) {
+    public void navigateToScheduleList(long routeId, String routeName) {
         getChildFragmentManager()
                 .beginTransaction()
                 .replace(R.id.query_container, ScheduleListFragment.newInstance(routeId, routeName))
@@ -63,7 +63,7 @@ public class QueryFragment extends Fragment {
                 .commit();
     }
 
-    public void navigateToEditRoute(int routeId) {
+    public void navigateToEditRoute(long routeId) {
         getChildFragmentManager()
                 .beginTransaction()
                 .replace(R.id.query_container, AddEditRouteFragment.newInstance(routeId))
@@ -71,7 +71,7 @@ public class QueryFragment extends Fragment {
                 .commit();
     }
 
-    public void navigateToAddSchedule(int routeId) {
+    public void navigateToAddSchedule(long routeId) {
         getChildFragmentManager()
                 .beginTransaction()
                 .replace(R.id.query_container, AddEditScheduleFragment.newInstance(routeId))
@@ -79,7 +79,7 @@ public class QueryFragment extends Fragment {
                 .commit();
     }
 
-    public void navigateToEditSchedule(int routeId, int scheduleId) {
+    public void navigateToEditSchedule(long routeId, long scheduleId) {
         getChildFragmentManager()
                 .beginTransaction()
                 .replace(R.id.query_container, AddEditScheduleFragment.newInstance(routeId, scheduleId))

@@ -12,7 +12,7 @@ public abstract class RouteDao {
     public abstract LiveData<List<Route>> getAllRoutes();
 
     @Query("SELECT * FROM routes WHERE id = :id")
-    public abstract Route getById(int id);
+    public abstract Route getById(long id);
 
     @Insert
     public abstract long insert(Route route);
@@ -27,7 +27,7 @@ public abstract class RouteDao {
     public abstract void clearAllDefaults();
 
     @Query("UPDATE routes SET isFavorite = :fav WHERE id = :routeId")
-    public abstract void setFavorite(int routeId, boolean fav);
+    public abstract void setFavorite(long routeId, boolean fav);
 
     @Query("SELECT * FROM routes WHERE isDefault = 1 LIMIT 1")
     public abstract Route getDefaultRoute();
@@ -36,7 +36,7 @@ public abstract class RouteDao {
     public abstract List<Route> getAllRoutesSync();
 
     @Transaction
-    public void setDefault(int routeId) {
+    public void setDefault(long routeId) {
         clearAllDefaults();
         Route route = getById(routeId);
         if (route != null) {

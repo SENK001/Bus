@@ -19,7 +19,7 @@ import java.util.Map;
 public class RouteAdapter extends RecyclerView.Adapter<RouteAdapter.ViewHolder> {
 
     private List<Route> routes = new ArrayList<>();
-    private Map<Integer, String> nextTimes = new HashMap<>();
+    private final Map<Long, String> nextTimes = new HashMap<>();
     private OnRouteClickListener clickListener;
     private OnRouteLongClickListener longClickListener;
 
@@ -36,7 +36,7 @@ public class RouteAdapter extends RecyclerView.Adapter<RouteAdapter.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    public void setNextTime(int routeId, String time) {
+    public void setNextTime(long routeId, String time) {
         nextTimes.put(routeId, time);
     }
 
@@ -96,7 +96,7 @@ public class RouteAdapter extends RecyclerView.Adapter<RouteAdapter.ViewHolder> 
         return routes.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvName;
         TextView tvDesc;
         TextView tvNextTime;

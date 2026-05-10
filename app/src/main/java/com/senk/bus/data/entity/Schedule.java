@@ -18,10 +18,10 @@ import androidx.room.PrimaryKey;
 )
 public class Schedule {
     @PrimaryKey(autoGenerate = true)
-    public int id;
+    public long id;
 
-    public int routeId;
+    public long routeId;
 
     @NonNull
-    public String departureTime;
+    public String departureTime = "00:00";
 }

@@ -9,13 +9,13 @@ import java.util.List;
 @Dao
 public interface ScheduleDao {
     @Query("SELECT * FROM schedules WHERE routeId = :routeId ORDER BY departureTime ASC")
-    LiveData<List<Schedule>> getSchedulesForRoute(int routeId);
+    LiveData<List<Schedule>> getSchedulesForRoute(long routeId);
 
     @Query("SELECT * FROM schedules WHERE routeId = :routeId ORDER BY departureTime ASC")
-    List<Schedule> getSchedulesForRouteSync(int routeId);
+    List<Schedule> getSchedulesForRouteSync(long routeId);
 
     @Query("SELECT * FROM schedules WHERE id = :id")
-    Schedule getById(int id);
+    Schedule getById(long id);
 
     @Insert
     long insert(Schedule schedule);
@@ -27,5 +27,5 @@ public interface ScheduleDao {
     void delete(Schedule schedule);
 
     @Query("DELETE FROM schedules WHERE routeId = :routeId")
-    void deleteByRouteId(int routeId);
+    void deleteByRouteId(long routeId);
 }

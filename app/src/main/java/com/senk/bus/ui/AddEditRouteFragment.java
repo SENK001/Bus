@@ -21,18 +21,18 @@ import com.senk.bus.data.entity.Route;
 public class AddEditRouteFragment extends Fragment {
 
     private static final String ARG_ROUTE_ID = "route_id";
-    private static final int NO_ID = -1;
+    private static final long NO_ID = -1;
 
-    private int routeId = NO_ID;
+    private Long routeId = NO_ID;
 
     public static AddEditRouteFragment newInstance() {
         return new AddEditRouteFragment();
     }
 
-    public static AddEditRouteFragment newInstance(int routeId) {
+    public static AddEditRouteFragment newInstance(long routeId) {
         AddEditRouteFragment fragment = new AddEditRouteFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_ROUTE_ID, routeId);
+        args.putLong(ARG_ROUTE_ID, routeId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -49,7 +49,7 @@ public class AddEditRouteFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (getArguments() != null) {
-            routeId = getArguments().getInt(ARG_ROUTE_ID, NO_ID);
+            routeId = getArguments().getLong(ARG_ROUTE_ID, NO_ID);
         }
 
         boolean isEdit = routeId != NO_ID;
