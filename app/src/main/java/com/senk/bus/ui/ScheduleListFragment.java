@@ -27,6 +27,7 @@ import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
 import com.senk.bus.data.entity.Schedule;
 import com.senk.bus.ui.adapter.ScheduleAdapter;
+import com.senk.bus.widget.BusWidgetProvider;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -199,8 +200,10 @@ public class ScheduleListFragment extends Fragment {
                     .setTitle(R.string.delete)
                     .setMessage(R.string.confirm_delete_schedule)
                     .setPositiveButton(R.string.delete, (d, w) -> {
-                        AppExecutors.diskIO(() ->
-                                AppDatabase.getInstance(requireContext()).scheduleDao().delete(schedule));
+                        AppExecutors.diskIO(() -> {
+                            AppDatabase.getInstance(requireContext()).scheduleDao().delete(schedule);
+                            BusWidgetProvider.notifyDataChanged(requireContext());
+                        });
                         Toast.makeText(requireContext(), R.string.schedule_deleted, Toast.LENGTH_SHORT).show();
                         dialog.dismiss();
                     })
@@ -213,6 +216,7 @@ public class ScheduleListFragment extends Fragment {
             AppExecutors.diskIO(() -> {
                 schedule.setDepartureTime(departureTime);
                 AppDatabase.getInstance(requireContext()).scheduleDao().update(schedule);
+                BusWidgetProvider.notifyDataChanged(requireContext());
             });
             Toast.makeText(requireContext(), R.string.schedule_updated, Toast.LENGTH_SHORT).show();
             dialog.dismiss();

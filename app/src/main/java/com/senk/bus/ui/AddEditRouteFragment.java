@@ -17,6 +17,7 @@ import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
 import com.senk.bus.data.entity.Route;
+import com.senk.bus.widget.BusWidgetProvider;
 
 public class AddEditRouteFragment extends Fragment {
 
@@ -102,6 +103,7 @@ public class AddEditRouteFragment extends Fragment {
                             route.setOrigin(origin);
                             route.setDestination(destination);
                             AppDatabase.getInstance(requireContext()).routeDao().update(route);
+                            BusWidgetProvider.notifyDataChanged(requireContext());
                         }
                     });
                 } else {
@@ -111,6 +113,7 @@ public class AddEditRouteFragment extends Fragment {
                     route.setDestination(destination);
                     AppExecutors.diskIO(() -> {
                         AppDatabase.getInstance(requireContext()).routeDao().insert(route);
+                        BusWidgetProvider.notifyDataChanged(requireContext());
                     });
                 }
 

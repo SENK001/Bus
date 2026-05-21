@@ -15,6 +15,7 @@ import com.senk.bus.R;
 import com.senk.bus.data.AppDatabase;
 import com.senk.bus.data.AppExecutors;
 import com.senk.bus.data.entity.Schedule;
+import com.senk.bus.widget.BusWidgetProvider;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -96,13 +97,17 @@ public class AddEditScheduleFragment extends Fragment {
                         if (schedule != null) {
                             schedule.setDepartureTime(departureTime);
                             AppDatabase.getInstance(requireContext()).scheduleDao().update(schedule);
+                            BusWidgetProvider.notifyDataChanged(requireContext());
                         }
                     });
                 } else {
                     Schedule schedule = new Schedule();
                     schedule.setRouteId(routeId);
                     schedule.setDepartureTime(departureTime);
-                    AppExecutors.diskIO(() -> AppDatabase.getInstance(requireContext()).scheduleDao().insert(schedule));
+                    AppExecutors.diskIO(() -> {
+                        AppDatabase.getInstance(requireContext()).scheduleDao().insert(schedule);
+                        BusWidgetProvider.notifyDataChanged(requireContext());
+                    });
                 }
 
                 Toast.makeText(requireContext(),

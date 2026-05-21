@@ -30,6 +30,7 @@ import com.senk.bus.data.AppExecutors;
 import com.senk.bus.data.entity.Route;
 import com.senk.bus.data.entity.Schedule;
 import com.senk.bus.ui.adapter.RouteAdapter;
+import com.senk.bus.widget.BusWidgetProvider;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -146,19 +147,25 @@ public class RouteListFragment extends Fragment {
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
             if (itemId == 1) {
-                AppExecutors.diskIO(() ->
-                        AppDatabase.getInstance(requireContext())
-                                .routeDao().setFavorite(route.getId(), !route.isFavorite()));
+                AppExecutors.diskIO(() -> {
+                    AppDatabase.getInstance(requireContext())
+                            .routeDao().setFavorite(route.getId(), !route.isFavorite());
+                    BusWidgetProvider.notifyDataChanged(requireContext());
+                });
                 return true;
             } else if (itemId == 2) {
                 if (route.isDefault()) {
-                    AppExecutors.diskIO(() ->
-                            AppDatabase.getInstance(requireContext())
-                                    .routeDao().clearAllDefaults());
+                    AppExecutors.diskIO(() -> {
+                        AppDatabase.getInstance(requireContext())
+                                .routeDao().clearAllDefaults();
+                        BusWidgetProvider.notifyDataChanged(requireContext());
+                    });
                 } else {
-                    AppExecutors.diskIO(() ->
-                            AppDatabase.getInstance(requireContext())
-                                    .routeDao().setDefault(route.getId()));
+                    AppExecutors.diskIO(() -> {
+                        AppDatabase.getInstance(requireContext())
+                                .routeDao().setDefault(route.getId());
+                        BusWidgetProvider.notifyDataChanged(requireContext());
+                    });
                 }
                 return true;
             } else if (itemId == 3) {
@@ -185,6 +192,7 @@ public class RouteListFragment extends Fragment {
                     AppExecutors.diskIO(() ->{
                                 AppDatabase.getInstance(requireContext()).routeDao().delete(route);
                                 AppDatabase.getInstance(requireContext()).scheduleDao().deleteByRouteId(route.getId());
+                                BusWidgetProvider.notifyDataChanged(requireContext());
                             });
                     Toast.makeText(requireContext(),
                             getString(R.string.route_deleted, route.getName()),
@@ -285,6 +293,7 @@ public class RouteListFragment extends Fragment {
 
                 requireActivity().runOnUiThread(() ->
                         Toast.makeText(requireContext(), R.string.import_success, Toast.LENGTH_SHORT).show());
+                BusWidgetProvider.notifyDataChanged(requireContext());
             } catch (Exception e) {
                 requireActivity().runOnUiThread(() ->
                         Toast.makeText(requireContext(), R.string.import_error, Toast.LENGTH_SHORT).show());

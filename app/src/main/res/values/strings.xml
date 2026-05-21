@@ -47,6 +47,9 @@
     <string name="export_success">已复制到剪贴板</string>
     <string name="import_success">导入成功</string>
     <string name="import_error">导入失败，剪贴板内容无效</string>
+    <string name="widget_description">显示路线和下个班车时间</string>
+    <string name="widget_title">班车查询</string>
+    <string name="widget_no_routes">暂无路线\n请打开App添加</string>
     <string-array name="hours">
         <item>00</item>
         <item>01</item>
