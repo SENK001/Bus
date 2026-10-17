@@ -32,10 +32,10 @@ App 不申请任何运行时权限；Manifest 中只有 `MainActivity`、小组�
 
 | 类别        | 取值                                                                          |
 | ----------- | ----------------------------------------------------------------------------- |
-| UI 语言     | Java 11（Android/UI 代码）+ Kotlin 实体类                                     |
-| Kotlin      | 由 AGP 9 内置 Kotlin 支持编译，不引入 `kotlin-android` 插件、不额外依赖 stdlib  |
+| 语言        | Kotlin（全部生产/测试代码与 Room 实体）；JVM target 11                        |
+| Kotlin 工具链 | 由 AGP 9 内置 Kotlin 2.2.10 编译，不引入 `kotlin-android` 插件；Room 用 KSP 2.2.10-2.0.2 |
 | UI          | Material3 1.13.0、AppCompat 1.7.1、RecyclerView 1.4.0、Fragment 1.8.9、LiveData 2.10.0 |
-| 持久化      | Room 2.8.4（runtime + annotation processor）                                  |
+| 持久化      | Room 2.8.4（KSP 处理器）                                                       |
 | 时间选择器  | `WheelPicker`（JitPack：`com.github.open-android:WheelPicker:v1.0.0`）         |
 | 构建        | Gradle 9.4.1（wrapper）、Android Gradle Plugin 9.0.0、Gradle 使用 JDK 17      |
 | SDK 版本    | minSdk 29（Android 10）· targetSdk 36 · compileSdk 36                         |
@@ -46,7 +46,7 @@ App 不申请任何运行时权限；Manifest 中只有 `MainActivity`、小组�
 
 ### 环境要求
 
-- JDK 17 运行 Gradle（Java/Kotlin 源码兼容级别为 11）。
+- JDK 17 运行 Gradle（Kotlin/Java 字节码目标为 11）。
 - Android SDK：**Platform 36** 与 **Build-Tools 36.0.0**。
 - 一台 API 29+ 的设备或模拟器。
 
@@ -83,6 +83,9 @@ RELEASE_KEY_PASSWORD='...' \
 
 单 Activity + 手动管理子 Fragment。没有 ViewModel、没有 DI 框架、没有 Navigation Component。
 
+全部生产代码、单元测试与仪器测试均为 Kotlin（`.kt`），仓库中没有 `.java` 源码；Kotlin 源码沿用
+标准的 `src/main/java`、`src/test/java`、`src/androidTest/java` 目录。
+
 ```
 MainActivity（边到边，launchMode=singleTop）
   └── QueryFragment（导航容器：子 FragmentManager + 手动回退栈）
@@ -101,30 +104,30 @@ MainActivity（边到边，launchMode=singleTop）
 
 ```
 com.senk.bus
-├── MainActivity.java                  单 Activity，边到边，处理小组件跳转 intent
+├── MainActivity.kt                  单 Activity，边到边，处理小组件跳转 intent
 ├── data/
-│   ├── AppDatabase.java               Room 单例（"bus_database"，schema v1）
-│   ├── AppExecutors.java              单线程磁盘 IO 执行器（"bus-disk-io"）
-│   ├── NextDeparture.java             纯 Java 的 HH:mm / 下一班计算工具（有单元测试）
+│   ├── AppDatabase.kt               Room 单例（"bus_database"，schema v1）
+│   ├── AppExecutors.kt              单线程磁盘 IO 执行器（"bus-disk-io"）
+│   ├── NextDeparture.kt             纯 Kotlin 的 HH:mm / 下一班计算工具（有单元测试）
 │   ├── dao/
-│   │   ├── RouteDao.java              路线 CRUD、收藏、默认、同步列表
-│   │   └── ScheduleDao.java           车次 CRUD、按路线与全量同步查询
+│   │   ├── RouteDao.kt              路线 CRUD、收藏、默认、同步列表
+│   │   └── ScheduleDao.kt           车次 CRUD、按路线与全量同步查询
 │   └── entity/
 │       ├── Route.kt                   Kotlin @Entity：id、name、origin、destination、两个标记
 │       └── Schedule.kt                Kotlin @Entity：id、routeId（外键 → 级联删除，有索引）、时间
 ├── ui/
-│   ├── QueryFragment.java             子 Fragment 导航容器（导航 500ms 防抖）
-│   ├── RouteListFragment.java         路线列表 + 分钟级刷新 + 导入/导出
-│   ├── ScheduleListFragment.java      车次列表 + 横幅 + 分钟级刷新 + 编辑弹窗
-│   ├── AddEditRouteFragment.java      路线增改表单
-│   ├── AddEditScheduleFragment.java   车次添加页（编辑走列表弹窗）
-│   ├── WheelTimePicker.java           封装两个 WheelPicker，提供时:分选择
+│   ├── QueryFragment.kt             子 Fragment 导航容器（导航 500ms 防抖）
+│   ├── RouteListFragment.kt         路线列表 + 分钟级刷新 + 导入/导出
+│   ├── ScheduleListFragment.kt      车次列表 + 横幅 + 分钟级刷新 + 编辑弹窗
+│   ├── AddEditRouteFragment.kt      路线增改表单
+│   ├── AddEditScheduleFragment.kt   车次添加页（编辑走列表弹窗）
+│   ├── WheelTimePicker.kt           封装两个 WheelPicker，提供时:分选择
 │   └── adapter/
-│       ├── RouteAdapter.java          路线卡片（DiffUtil）
-│       └── ScheduleAdapter.java       车次条目 + "NEXT" 徽章（DiffUtil）
+│       ├── RouteAdapter.kt          路线卡片（DiffUtil）
+│       └── ScheduleAdapter.kt       车次条目 + "NEXT" 徽章（DiffUtil）
 └── widget/
-    ├── BusWidgetProvider.java         AppWidgetProvider：RemoteViews、点击模板、闹钟刷新
-    └── BusWidgetService.java          RemoteViewsService：列表行与下一班时间
+    ├── BusWidgetProvider.kt         AppWidgetProvider：RemoteViews、点击模板、闹钟刷新
+    └── BusWidgetService.kt          RemoteViewsService：列表行与下一班时间
 ```
 
 ### 数据模型
@@ -149,8 +152,8 @@ Room schema 版本为 **1**，`exportSchema = false`；将来修改表结构时�
 
 ### 下一班车计算
 
-所有"下一班"逻辑集中在 `com.senk.bus.data.NextDeparture`（纯 Java、无 Android 依赖，由
-`app/src/test/java/com/senk/bus/data/NextDepartureTest.java` 的 13 个 JVM 用例覆盖）：
+所有"下一班"逻辑集中在 `com.senk.bus.data.NextDeparture`（纯 Kotlin、无 Android 依赖，由
+`app/src/test/java/com/senk/bus/data/NextDepartureTest.kt` 的 13 个 JVM 用例覆盖）：
 
 - `nowHHmm()`、`isValid(String)`、`parseMinutes(String)`、`format(int)`、`minutesUntil(from, to)`：
   均处理跨天回绕；非法时间返回 `-1` 而不是抛异常；
@@ -294,6 +297,9 @@ base64 -w 0 release.jks        # Linux/macOS
 - **小组件 API**：collection `RemoteViews` API 已废弃；不支持"每个小组件实例固定一条路线"的
   配置；闹钟为非精确闹钟（Doze 下可能延迟）。
 - **测试**：只有 `NextDepartureTest` 有真实覆盖；仪器测试仍是 Android Studio 模板。
+- **Kotlin + KSP 工具链**：Room 使用 KSP 处理。KSP 目前仍通过 Kotlin source-set DSL 注册生成
+  源码，因此 `gradle.properties` 保留了实验性开关 `android.disallowKotlinSourceSets=false`；待 KSP
+  原生支持 AGP 9 内置 Kotlin 后可移除。
 - **Lint**：构建 0 error，但存在依赖/SDK 版本偏旧的 warning，以及 `mipmap-anydpi-v26` 必需目录
   导致的 `ObsoleteSdkInt` 误报。
 - **打包**：`versionCode`/`versionName` 为静态值（发版时手动上调）；App 仅中文（无翻译资源

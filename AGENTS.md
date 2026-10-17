@@ -16,8 +16,8 @@ clipboard import/export, and ships a home-screen widget. The UI is Simplified Ch
 | --- | --- |
 | Min / target / compile SDK | 29 / 36 / 36 |
 | Gradle / AGP | 9.4.1 (wrapper) / 9.0.0 |
-| Gradle JVM | JDK 17 (`JAVA_HOME`); Java/Kotlin source compatibility 11 |
-| Kotlin | Room entities only; compiled by AGP 9 built-in Kotlin support |
+| Gradle JVM | JDK 17 (`JAVA_HOME`); Kotlin/Java bytecode target 11 |
+| Kotlin | All production/test code is Kotlin; compiled by AGP 9 built-in Kotlin 2.2.10, Room via KSP 2.2.10-2.0.2 |
 | Dependencies | Room 2.8.4, Material 1.13.0, AppCompat 1.7.1, Fragment 1.8.9, LiveData 2.10.0, WheelPicker (JitPack) |
 | Package | `com.senk.bus` |
 | Version | `versionCode = 100000`, `versionName = "1.0.0"` (static; bumped only for releases) |
@@ -30,7 +30,7 @@ docs/README_CN.md         project overview (Chinese)
 AGENTS.md                 this file (agent guidance)
 LICENSE                   MIT
 app/                      application module
-  src/main/java/…         Java code + Kotlin Room entities
+  src/main/java/…         Kotlin sources (production code + Room entities)
   src/test/java/…         JVM unit tests (NextDepartureTest)
   src/androidTest/…       instrumented test template
   build.gradle            SDK levels, signing config, dependencies
@@ -67,7 +67,7 @@ settings.gradle           repositories (JitPack for WheelPicker)
 ## Architecture
 
 Single-Activity + manually managed child fragments. **No** ViewModel, no DI (Hilt/Dagger), no
-Navigation Component.
+Navigation Component. All production and test code is Kotlin (`.kt`); the module has no Java sources.
 
 ```
 MainActivity (edge-to-edge, launchMode=singleTop)
@@ -84,11 +84,11 @@ BusWidgetProvider (AppWidgetProvider) + BusWidgetService (RemoteViewsService)
 
 ```
 com.senk.bus
-├── MainActivity.java
+├── MainActivity.kt
 ├── data/
-│   ├── AppDatabase.java      Room singleton ("bus_database", version 1, exportSchema = false)
-│   ├── AppExecutors.java     single-thread disk IO ("bus-disk-io")
-│   ├── NextDeparture.java    pure-Java HH:mm helpers (unit tested)
+│   ├── AppDatabase.kt      Room singleton ("bus_database", version 1, exportSchema = false)
+│   ├── AppExecutors.kt     single-thread disk IO ("bus-disk-io")
+│   ├── NextDeparture.kt    pure-Kotlin HH:mm helpers (unit tested)
 │   ├── dao/                  RouteDao, ScheduleDao
 │   └── entity/               Route.kt, Schedule.kt (Kotlin)
 ├── ui/                       fragments, WheelTimePicker, adapters
@@ -177,11 +177,16 @@ com.senk.bus
   qualifier is mandatory for `<adaptive-icon>`; `mipmap-anydpi` breaks AAPT linking.
 
 ### Language / build
-- Android/UI code is **Java**; Room entities are **Kotlin** (`var` properties) and Java call sites
-  use generated getters/setters. Do not add the Kotlin Gradle plugin or a Kotlin stdlib dependency —
-  AGP 9's built-in Kotlin support compiles the entities.
-- Room is wired with a Java `annotationProcessor` (`room-compiler`). Do not add annotation-processor
-  entries that are not processors.
+- All code is **Kotlin** (`*.kt`): production, JVM unit tests and instrumented tests. Do not add
+  `.java` sources. Kotlin is compiled by AGP 9's built-in Kotlin support (2.2.10) — do not add the
+  `kotlin-android` plugin or an explicit Kotlin stdlib dependency.
+- Room entities are Kotlin classes with `var` properties, DAOs are Kotlin abstract
+  classes/interfaces, and Room is processed with **KSP** (`id 'com.google.devtools.ksp'`,
+  `ksp 'androidx.room:room-compiler:2.8.4'`, KSP 2.2.10-2.0.2). Do not reintroduce
+  `annotationProcessor` for Room.
+- Use idiomatic Kotlin (`val`/`var`, lambdas, `object :` for anonymous classes) while keeping
+  behaviour identical. Dispatch disk work with `AppExecutors.diskIO { ... }`.
+- Kotlin/Java bytecode target is 11 (matching `compileOptions`).
 - Use Gradle `=` assignments (`minSdk = 29`, `url = '...'`) — space-assignment syntax is removed in
   Gradle 10.
 - `androidx.constraintlayout` was removed because no layout uses it; do not reintroduce it.
@@ -200,11 +205,11 @@ com.senk.bus
 
 ## Testing
 
-- `app/src/test/java/com/senk/bus/data/NextDepartureTest.java` — 13 JVM tests covering parsing,
+- `app/src/test/java/com/senk/bus/data/NextDepartureTest.kt` — 13 JVM tests covering parsing,
   formatting, midnight wrap and `find(...)` edge cases. Extend it when touching time logic.
 - `ExampleUnitTest` / `ExampleInstrumentedTest` are Android Studio templates; do not treat them as
   coverage.
-- Prefer pure-Java helpers (no Android imports) so logic stays unit-testable without Robolectric.
+- Prefer pure-Kotlin helpers (no Android imports) so logic stays unit-testable without Robolectric.
 
 ## Known Limitations (accepted, do not "fix" silently)
 
@@ -212,6 +217,9 @@ com.senk.bus
 - Manual navigation; no Navigation Component.
 - Room: `exportSchema = false`, no migration tests, no unique/CHECK constraints.
 - Deprecated widget collection APIs; no per-widget configuration; inexact widget alarm.
+- Kotlin + KSP: KSP registers generated sources through the Kotlin source-set DSL, so
+  `gradle.properties` keeps `android.disallowKotlinSourceSets=false` (experimental) until KSP
+  supports AGP 9 built-in Kotlin natively.
 - Static version numbers; Chinese-only resources; JitPack-hosted `WheelPicker`.
 - Lint warnings for newer dependency/SDK versions and one `mipmap-anydpi-v26` false positive are
   accepted.

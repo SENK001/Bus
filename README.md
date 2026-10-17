@@ -38,10 +38,10 @@ provider and the widget's `RemoteViewsService`.
 
 | Category        | Value                                                                         |
 | --------------- | ----------------------------------------------------------------------------- |
-| UI language     | Java 11 (Android/UI code) + Kotlin entity classes                              |
-| Kotlin          | AGP 9 built-in Kotlin support — no `kotlin-android` plugin, no Kotlin stdlib dep |
+| Language        | Kotlin (all production/test code, including Room entities); JVM target 11      |
+| Kotlin toolchain| AGP 9 built-in Kotlin 2.2.10 — no `kotlin-android` plugin; Room via KSP          |
 | UI toolkit      | Material3 1.13.0, AppCompat 1.7.1, RecyclerView 1.4.0, Fragment 1.8.9, LiveData 2.10.0 |
-| Persistence     | Room 2.8.4 (runtime + annotation processor)                                    |
+| Persistence     | Room 2.8.4 processed with KSP 2.2.10-2.0.2                                      |
 | Time picker     | `WheelPicker` (JitPack: `com.github.open-android:WheelPicker:v1.0.0`)          |
 | Build           | Gradle 9.4.1 (wrapper), Android Gradle Plugin 9.0.0, JDK 17 for Gradle         |
 | SDK levels      | minSdk 29 (Android 10) · targetSdk 36 · compileSdk 36                          |
@@ -52,7 +52,7 @@ provider and the widget's `RemoteViewsService`.
 
 ### Prerequisites
 
-- JDK 17 for Gradle (Java/Kotlin source compatibility is 11).
+- JDK 17 for Gradle (Kotlin/Java bytecode target is 11).
 - Android SDK with **Platform 36** and **Build-Tools 36.0.0** installed.
 - A device or emulator running API 29+.
 
@@ -92,6 +92,10 @@ published artifact name (`Bus_<tag>.apk`).
 Single-Activity app with manually managed child fragments. There is no ViewModel, no DI framework and
 no Navigation Component.
 
+All production, unit-test and instrumented-test code is Kotlin (`.kt`) — there are no `.java` sources.
+Kotlin sources use the standard `src/main/java`, `src/test/java` and `src/androidTest/java`
+directories.
+
 ```
 MainActivity (edge-to-edge, launchMode=singleTop)
   └── QueryFragment (navigation host: child FragmentManager + manual back stack)
@@ -110,30 +114,30 @@ Home screen
 
 ```
 com.senk.bus
-├── MainActivity.java                  single Activity, edge-to-edge, widget-intent handling
+├── MainActivity.kt                  single Activity, edge-to-edge, widget-intent handling
 ├── data/
-│   ├── AppDatabase.java               Room singleton ("bus_database", schema v1)
-│   ├── AppExecutors.java              single-thread disk IO executor ("bus-disk-io")
-│   ├── NextDeparture.java             pure-Java HH:mm / next-departure helpers (unit tested)
+│   ├── AppDatabase.kt               Room singleton ("bus_database", schema v1)
+│   ├── AppExecutors.kt              single-thread disk IO executor ("bus-disk-io")
+│   ├── NextDeparture.kt             pure-Kotlin HH:mm / next-departure helpers (unit tested)
 │   ├── dao/
-│   │   ├── RouteDao.java              route CRUD, favorites, default, sync list
-│   │   └── ScheduleDao.java           schedule CRUD, per-route and all-schedules sync queries
+│   │   ├── RouteDao.kt              route CRUD, favorites, default, sync list
+│   │   └── ScheduleDao.kt           schedule CRUD, per-route and all-schedules sync queries
 │   └── entity/
 │       ├── Route.kt                   Kotlin @Entity: id, name, origin, destination, flags
 │       └── Schedule.kt                Kotlin @Entity: id, routeId (FK → CASCADE, indexed), time
 ├── ui/
-│   ├── QueryFragment.java             child-fragment navigation host (500 ms navigation debounce)
-│   ├── RouteListFragment.java         route list + minute ticker + import/export
-│   ├── ScheduleListFragment.java      schedule list + banner + minute ticker + edit dialog
-│   ├── AddEditRouteFragment.java      route add/edit form
-│   ├── AddEditScheduleFragment.java   schedule add screen (edit uses the list dialog)
-│   ├── WheelTimePicker.java           wraps two WheelPicker views into an hour:minute picker
+│   ├── QueryFragment.kt             child-fragment navigation host (500 ms navigation debounce)
+│   ├── RouteListFragment.kt         route list + minute ticker + import/export
+│   ├── ScheduleListFragment.kt      schedule list + banner + minute ticker + edit dialog
+│   ├── AddEditRouteFragment.kt      route add/edit form
+│   ├── AddEditScheduleFragment.kt   schedule add screen (edit uses the list dialog)
+│   ├── WheelTimePicker.kt           wraps two WheelPicker views into an hour:minute picker
 │   └── adapter/
-│       ├── RouteAdapter.java          route cards (DiffUtil)
-│       └── ScheduleAdapter.java       schedule rows + "NEXT" badge (DiffUtil)
+│       ├── RouteAdapter.kt          route cards (DiffUtil)
+│       └── ScheduleAdapter.kt       schedule rows + "NEXT" badge (DiffUtil)
 └── widget/
-    ├── BusWidgetProvider.java         AppWidgetProvider: RemoteViews, click templates, alarm refresh
-    └── BusWidgetService.java          RemoteViewsService: list rows and next-departure times
+    ├── BusWidgetProvider.kt         AppWidgetProvider: RemoteViews, click templates, alarm refresh
+    └── BusWidgetService.kt          RemoteViewsService: list rows and next-departure times
 ```
 
 ### Data model
@@ -159,9 +163,9 @@ in Android auto-backup by default.
 
 ### Next-departure calculation
 
-All "next departure" math lives in `com.senk.bus.data.NextDeparture` (pure Java, no Android
+All "next departure" math lives in `com.senk.bus.data.NextDeparture` (pure Kotlin, no Android
 dependencies, covered by JVM tests in
-`app/src/test/java/com/senk/bus/data/NextDepartureTest.java` — 13 cases):
+`app/src/test/java/com/senk/bus/data/NextDepartureTest.kt` — 13 cases):
 
 - `nowHHmm()`, `isValid(String)`, `parseMinutes(String)`, `format(int)`, `minutesUntil(from, to)` —
   all midnight-wrap aware; invalid times return `-1` instead of throwing;
@@ -316,6 +320,10 @@ and accepted for now:
   Doze).
 - **Testing**: only `NextDepartureTest` has real coverage; instrumented tests are still the Android
   Studio template.
+- **Kotlin + KSP toolchain**: Room is processed with KSP. KSP currently registers its generated
+  sources through the Kotlin source-set DSL, so `gradle.properties` sets the experimental
+  `android.disallowKotlinSourceSets=false`; remove it once KSP supports AGP 9 built-in Kotlin without
+  that flag.
 - **Lint**: build is clean (0 errors) but lint reports warnings for newer library/SDK versions and one
   false-positive `ObsoleteSdkInt` for the required `mipmap-anydpi-v26` folder.
 - **Packaging**: `versionCode`/`versionName` are static (bumped manually at release time); the app is
