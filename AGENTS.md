@@ -86,7 +86,7 @@ BusWidgetProvider (AppWidgetProvider) + BusWidgetService (RemoteViewsService)
 com.senk.bus
 ├── MainActivity.kt
 ├── data/
-│   ├── AppDatabase.kt      Room singleton ("bus_database", version 1, exportSchema = false)
+│   ├── AppDatabase.kt      Room singleton ("bus_database", version 2, exportSchema = true)
 │   ├── AppExecutors.kt     single-thread disk IO ("bus-disk-io")
 │   ├── NextDeparture.kt    pure-Kotlin HH:mm helpers (unit tested)
 │   ├── dao/                  RouteDao, ScheduleDao
@@ -100,8 +100,8 @@ com.senk.bus
 - `routes`: `id` (PK, long), `name`, `origin`, `destination`, `isFavorite`, `isDefault`.
 - `schedules`: `id` (PK, long), `routeId` (FK → `routes.id`, `ON DELETE CASCADE`, indexed),
   `departureTime` (strict `HH:mm` string).
-- Schema version is **1** and `exportSchema = false`. Changing the schema requires a version bump
-  plus a `Migration` in `AppDatabase`; room-testing/migration tests are not set up.
+- Schema version is **2** and `exportSchema = true`. Changing the schema requires a version bump
+  plus a `Migration` in `AppDatabase`; Room migration testing is available.
 - `android:allowBackup` is on, so the database is included in Android auto-backup.
 
 ## Hard Rules (common sources of bugs)
@@ -213,9 +213,11 @@ com.senk.bus
 
 ## Known Limitations (accepted, do not "fix" silently)
 
-- No ViewModel/SavedStateHandle: configuration changes lose dialog/form state.
+- ViewModel adoption is partial: `AddEditRouteViewModel` keeps route form state across
+  configuration changes, but most screens still rely on Fragment-local state.
 - Manual navigation; no Navigation Component.
-- Room: `exportSchema = false`, no migration tests, no unique/CHECK constraints.
+- Room: schema export + migration tests are in place, and schedules enforce a per-route
+  unique departure-time constraint.
 - Deprecated widget collection APIs; no per-widget configuration; inexact widget alarm.
 - Kotlin + KSP: KSP registers generated sources through the Kotlin source-set DSL, so
   `gradle.properties` keeps `android.disallowKotlinSourceSets=false` (experimental) until KSP

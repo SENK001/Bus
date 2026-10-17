@@ -8,7 +8,6 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -29,14 +28,12 @@ import com.senk.bus.R
 import com.senk.bus.data.AppDatabase
 import com.senk.bus.data.AppExecutors
 import com.senk.bus.data.NextDeparture
+import com.senk.bus.data.RouteTransfer
+import com.senk.bus.data.RouteTransferParseResult
 import com.senk.bus.data.entity.Route
 import com.senk.bus.data.entity.Schedule
 import com.senk.bus.ui.adapter.RouteAdapter
 import com.senk.bus.widget.BusWidgetProvider
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
-import java.nio.charset.StandardCharsets
 
 class RouteListFragment : Fragment() {
 
@@ -366,10 +363,7 @@ class RouteListFragment : Fragment() {
     // 导出 / 导入
     // ---------------------------------------------------------------------
 
-    /**
-     * 导出为 Base64(JSON)：{"version":2,"routes":[{name,origin,destination,isFavorite,
-     * isDefault,schedules:[{departureTime}]}]}，复制到剪贴板。
-     */
+    /** 导出为 Base64(JSON) 并复制到剪贴板。 */
     private fun exportData() {
         val appContext = requireContext().applicationContext
         val hostActivity = requireActivity()
@@ -416,42 +410,10 @@ class RouteListFragment : Fragment() {
             }
             routeSchedules.add(schedule)
         }
-
-        val routesArray = JSONArray()
-        for (route in allRoutes) {
-            val routeObject = JSONObject()
-            routeObject.put("name", route.name)
-            routeObject.put("origin", route.origin)
-            routeObject.put("destination", route.destination)
-            routeObject.put("isFavorite", route.isFavorite)
-            routeObject.put("isDefault", route.isDefault)
-
-            val schedulesArray = JSONArray()
-            val routeSchedules = schedulesByRoute[route.id]
-            if (routeSchedules != null) {
-                for (schedule in routeSchedules) {
-                    val scheduleObject = JSONObject()
-                    scheduleObject.put("departureTime", schedule.departureTime)
-                    schedulesArray.put(scheduleObject)
-                }
-            }
-            routeObject.put("schedules", schedulesArray)
-            routesArray.put(routeObject)
-        }
-
-        val data = JSONObject()
-        data.put("version", EXPORT_VERSION)
-        data.put("routes", routesArray)
-        return Base64.encodeToString(
-            data.toString().toByteArray(StandardCharsets.UTF_8),
-            Base64.NO_WRAP,
-        )
+        return RouteTransfer.buildExportBase64(allRoutes, schedulesByRoute)
     }
 
-    /**
-     * 从剪贴板导入：Base64 解码容错、字段与时间严格校验、整段导入在单个 Room 事务内完成，
-     * 并按 name+origin+destination 去重合并，重复导入不会产生整份重复数据。
-     */
+    /** 从剪贴板导入并合并去重。 */
     private fun importData() {
         if (importing) {
             return
@@ -495,12 +457,8 @@ class RouteListFragment : Fragment() {
         AppExecutors.diskIO {
             var stats: IntArray? = null
             try {
-                val decoded = Base64.decode(base64, Base64.DEFAULT)
-                val json = String(decoded, StandardCharsets.UTF_8)
-                val data = JSONObject(json)
-                val routesArray = data.optJSONArray("routes")
-                    ?: throw JSONException("Import payload has no routes array")
-                stats = importIntoDatabase(AppDatabase.getInstance(appContext), routesArray)
+                val parsed = RouteTransfer.parseImportBase64(base64)
+                stats = importIntoDatabase(AppDatabase.getInstance(appContext), parsed)
                 try {
                     BusWidgetProvider.notifyDataChanged(appContext)
                 } catch (e: Exception) {
@@ -532,59 +490,40 @@ class RouteListFragment : Fragment() {
      *
      * @return [0] = 成功处理的路线数, [1] = 跳过的无效数据条数
      */
-    private fun importIntoDatabase(db: AppDatabase, routesArray: JSONArray): IntArray {
-        val stats = intArrayOf(0, 0)
+    private fun importIntoDatabase(
+        db: AppDatabase,
+        parsed: RouteTransferParseResult,
+    ): IntArray {
+        val stats = intArrayOf(0, parsed.skippedEntries)
         db.runInTransaction {
             // isDefault 归一化：先清空现有默认，再让导入项中第一条 isDefault=true 生效。
             db.routeDao().clearAllDefaults()
             val knownRoutes = ArrayList(db.routeDao().getAllRoutesSync())
             var defaultAssigned = false
 
-            for (i in 0 until routesArray.length()) {
-                val routeObject = routesArray.optJSONObject(i)
-                if (routeObject == null) {
-                    stats[1] += 1
-                    continue
-                }
-                val name = readText(routeObject, "name")
-                val origin = readText(routeObject, "origin")
-                val destination = readText(routeObject, "destination")
-                if (name.isEmpty() || origin.isEmpty() || destination.isEmpty()) {
-                    stats[1] += 1
-                    continue
-                }
+            for (item in parsed.routes) {
+                val wantsDefault = item.isDefault && !defaultAssigned
 
-                val validTimes = ArrayList<String>()
-                val schedulesArray = routeObject.optJSONArray("schedules")
-                if (schedulesArray != null) {
-                    for (j in 0 until schedulesArray.length()) {
-                        val departureTime = readDepartureTime(schedulesArray.optJSONObject(j))
-                        if (departureTime != null) {
-                            validTimes.add(departureTime)
-                        } else {
-                            stats[1] += 1
-                        }
-                    }
-                }
-
-                val favorite = routeObject.optBoolean("isFavorite", false)
-                val wantsDefault = routeObject.optBoolean("isDefault", false) && !defaultAssigned
-
-                val existing = findExistingRoute(knownRoutes, name, origin, destination)
+                val existing = findExistingRoute(
+                    knownRoutes,
+                    item.name,
+                    item.origin,
+                    item.destination,
+                )
                 val route: Route
                 if (existing == null) {
                     route = Route()
-                    route.name = name
-                    route.origin = origin
-                    route.destination = destination
-                    route.isFavorite = favorite
+                    route.name = item.name
+                    route.origin = item.origin
+                    route.destination = item.destination
+                    route.isFavorite = item.isFavorite
                     route.isDefault = wantsDefault
                     route.id = db.routeDao().insert(route)
                     knownRoutes.add(route)
                 } else {
                     route = existing
                     var changed = false
-                    if (favorite && !route.isFavorite) {
+                    if (item.isFavorite && !route.isFavorite) {
                         route.isFavorite = true
                         changed = true
                     }
@@ -604,7 +543,7 @@ class RouteListFragment : Fragment() {
                 for (existingSchedule in db.scheduleDao().getSchedulesForRouteSync(route.id)) {
                     existingTimes.add(existingSchedule.departureTime)
                 }
-                for (departureTime in validTimes) {
+                for (departureTime in item.departureTimes) {
                     if (!existingTimes.add(departureTime)) {
                         // 同一导入数据内重复、或数据库已存在该时间：跳过，保证幂等。
                         continue
@@ -634,19 +573,6 @@ class RouteListFragment : Fragment() {
         return null
     }
 
-    private fun readText(obj: JSONObject?, key: String): String {
-        if (obj == null) {
-            return ""
-        }
-        val value = obj.opt(key)
-        return if (value is String) value.trim() else ""
-    }
-
-    private fun readDepartureTime(obj: JSONObject?): String? {
-        val departureTime = readText(obj, "departureTime")
-        return if (NextDeparture.isValid(departureTime)) departureTime else null
-    }
-
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
@@ -662,8 +588,5 @@ class RouteListFragment : Fragment() {
         /** 路线卡片「下一班」的自动刷新周期：每分钟按当前时间重算一次。 */
         private const val MINUTE_REFRESH_INTERVAL = 60_000L
         private const val CLIP_LABEL = "bus_data"
-
-        /** 导出 JSON 结构版本；格式变化时必须递增并在导入侧兼容旧版本。 */
-        private const val EXPORT_VERSION = 2
     }
 }

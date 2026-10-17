@@ -6,15 +6,14 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- Keep persistent route/schedule data in cloud backup. -->
+        <include domain="database" path="bus_database"/>
+        <include domain="database" path="bus_database-wal"/>
+        <include domain="database" path="bus_database-shm"/>
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include domain="database" path="bus_database"/>
+        <include domain="database" path="bus_database-wal"/>
+        <include domain="database" path="bus_database-shm"/>
     </device-transfer>
-    -->
 </data-extraction-rules>

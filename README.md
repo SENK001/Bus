@@ -45,7 +45,7 @@ provider and the widget's `RemoteViewsService`.
 | Time picker     | `WheelPicker` (JitPack: `com.github.open-android:WheelPicker:v1.0.0`)          |
 | Build           | Gradle 9.4.1 (wrapper), Android Gradle Plugin 9.0.0, JDK 17 for Gradle         |
 | SDK levels      | minSdk 29 (Android 10) · targetSdk 36 · compileSdk 36                          |
-| Tests           | JUnit 4.13.2 (JVM) + AndroidX Test/Espresso (instrumented, template only)      |
+| Tests           | JUnit 4.13.2 (JVM) + AndroidX Test/Espresso + Room testing (instrumented)       |
 | CI              | GitHub Actions — build/test/lint on `main` and PRs, signed release on `v*` tags |
 
 ## Getting Started
@@ -130,6 +130,7 @@ com.senk.bus
 │   ├── RouteListFragment.kt         route list + minute ticker + import/export
 │   ├── ScheduleListFragment.kt      schedule list + banner + minute ticker + edit dialog
 │   ├── AddEditRouteFragment.kt      route add/edit form
+│   ├── AddEditRouteViewModel.kt     retains route form state across config changes
 │   ├── AddEditScheduleFragment.kt   schedule add screen (edit uses the list dialog)
 │   ├── WheelTimePicker.kt           wraps two WheelPicker views into an hour:minute picker
 │   └── adapter/
@@ -157,8 +158,9 @@ schedules
 └── departureTime  TEXT     (strict HH:mm, default "00:00")
 ```
 
-Room schema version is **1** and `exportSchema = false`; a future schema change must bump the version
-and add a `Migration` to `AppDatabase`. `android:allowBackup` is enabled, so the database is included
+Room schema version is **2** and `exportSchema = true`; schema history is exported under
+`app/schemas/` and future schema changes must bump the version and add a `Migration` to
+`AppDatabase`. `android:allowBackup` is enabled, so the database is included
 in Android auto-backup by default.
 
 ### Next-departure calculation
@@ -311,15 +313,16 @@ base64 -w 0 release.jks        # Linux/macOS
 The current code intentionally keeps a small, dependency-light architecture; the following are known
 and accepted for now:
 
-- **No ViewModel/state layer**: dialogs and in-progress form state are not preserved across
-  configuration changes; navigation is manual (no Navigation Component).
-- **Room evolution**: `exportSchema = false`, no migration tests and no unique/CHECK constraints on
-  schedules. Adding them requires a DB version bump + migration.
+- **State layer is still partial**: route add/edit form state is retained by `AddEditRouteViewModel`,
+  but most screens still use Fragment-local state and manual navigation (no Navigation Component).
+- **Room evolution is now baseline-ready**: schema export is enabled, migration test coverage exists
+  for 1→2, and schedules enforce per-route unique departure times; additional constraints still need
+  planned migrations.
 - **Widget APIs**: collection `RemoteViews` APIs are deprecated; per-widget configuration (each
   instance showing a fixed route) is not implemented, and the alarm is inexact (may be delayed in
   Doze).
-- **Testing**: only `NextDepartureTest` has real coverage; instrumented tests are still the Android
-  Studio template.
+- **Testing**: coverage now includes `RouteTransferTest` (JVM) and Room instrumented tests
+  (`AppDatabaseDaoTest`, `AppDatabaseMigrationTest`), but UI-flow coverage is still limited.
 - **Kotlin + KSP toolchain**: Room is processed with KSP. KSP currently registers its generated
   sources through the Kotlin source-set DSL, so `gradle.properties` sets the experimental
   `android.disallowKotlinSourceSets=false`; remove it once KSP supports AGP 9 built-in Kotlin without

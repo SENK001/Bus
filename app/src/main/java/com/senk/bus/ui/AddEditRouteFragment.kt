@@ -10,8 +10,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.viewModels
 import com.google.android.material.appbar.MaterialToolbar
 import com.senk.bus.R
 import com.senk.bus.data.AppDatabase
@@ -22,6 +24,7 @@ import com.senk.bus.widget.BusWidgetProvider
 class AddEditRouteFragment : Fragment() {
 
     private var routeId: Long = NO_ID
+    private val viewModel: AddEditRouteViewModel by viewModels()
 
     /** 防止保存按钮被快速双击重复提交。 */
     private var saving = false
@@ -41,6 +44,7 @@ class AddEditRouteFragment : Fragment() {
         if (args != null) {
             routeId = args.getLong(ARG_ROUTE_ID, NO_ID)
         }
+        viewModel.resetForRoute(routeId)
 
         val isEdit = routeId != NO_ID
 
@@ -51,6 +55,17 @@ class AddEditRouteFragment : Fragment() {
         val etName = view.findViewById<EditText>(R.id.et_route_name)
         val etOrigin = view.findViewById<EditText>(R.id.et_origin)
         val etDestination = view.findViewById<EditText>(R.id.et_destination)
+
+        if (viewModel.name.isNotEmpty()) {
+            etName.setText(viewModel.name)
+        }
+        if (viewModel.origin.isNotEmpty()) {
+            etOrigin.setText(viewModel.origin)
+        }
+        if (viewModel.destination.isNotEmpty()) {
+            etDestination.setText(viewModel.destination)
+        }
+        bindFormState(etName, etOrigin, etDestination)
 
         if (isEdit) {
             val appContext: Context = requireContext().applicationContext
@@ -68,15 +83,14 @@ class AddEditRouteFragment : Fragment() {
                     if (!isAdded() || getView() == null) {
                         return@runOnUiThread
                     }
-                    // 只在输入框为空时回填：配置变更恢复的用户输入不会被 DB 旧值覆盖。
-                    if (etName.text.length == 0) {
-                        etName.setText(route.name)
-                    }
-                    if (etOrigin.text.length == 0) {
-                        etOrigin.setText(route.origin)
-                    }
-                    if (etDestination.text.length == 0) {
-                        etDestination.setText(route.destination)
+                    if (!viewModel.initializedFromDatabase) {
+                        viewModel.name = route.name
+                        viewModel.origin = route.origin
+                        viewModel.destination = route.destination
+                        viewModel.initializedFromDatabase = true
+                        etName.setText(viewModel.name)
+                        etOrigin.setText(viewModel.origin)
+                        etDestination.setText(viewModel.destination)
                     }
                 }
             }
@@ -152,6 +166,7 @@ class AddEditRouteFragment : Fragment() {
                         return@runOnUiThread
                     }
                     if (saved) {
+                        viewModel.resetForRoute(NO_ID)
                         Toast.makeText(appContext, successMessage, Toast.LENGTH_SHORT).show()
                         navigateBack()
                     } else {
@@ -173,6 +188,16 @@ class AddEditRouteFragment : Fragment() {
         if (manager.backStackEntryCount > 0) {
             manager.popBackStackImmediate()
         }
+    }
+
+    private fun bindFormState(
+        etName: EditText,
+        etOrigin: EditText,
+        etDestination: EditText,
+    ) {
+        etName.doAfterTextChanged { viewModel.name = it?.toString().orEmpty() }
+        etOrigin.doAfterTextChanged { viewModel.origin = it?.toString().orEmpty() }
+        etDestination.doAfterTextChanged { viewModel.destination = it?.toString().orEmpty() }
     }
 
     companion object {

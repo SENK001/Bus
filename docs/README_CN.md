@@ -39,7 +39,7 @@ App 不申请任何运行时权限；Manifest 中只有 `MainActivity`、小组�
 | 时间选择器  | `WheelPicker`（JitPack：`com.github.open-android:WheelPicker:v1.0.0`）         |
 | 构建        | Gradle 9.4.1（wrapper）、Android Gradle Plugin 9.0.0、Gradle 使用 JDK 17      |
 | SDK 版本    | minSdk 29（Android 10）· targetSdk 36 · compileSdk 36                         |
-| 测试        | JUnit 4.13.2（JVM）+ AndroidX Test/Espresso（仪器测试，目前仅模板）            |
+| 测试        | JUnit 4.13.2（JVM）+ AndroidX Test/Espresso + Room Testing（含仪器测试）        |
 | CI          | GitHub Actions —— main/PR 构建测试，`v*` 标签签名发布                          |
 
 ## 快速开始
@@ -120,6 +120,7 @@ com.senk.bus
 │   ├── RouteListFragment.kt         路线列表 + 分钟级刷新 + 导入/导出
 │   ├── ScheduleListFragment.kt      车次列表 + 横幅 + 分钟级刷新 + 编辑弹窗
 │   ├── AddEditRouteFragment.kt      路线增改表单
+│   ├── AddEditRouteViewModel.kt     路线表单状态保留（配置变更不丢输入）
 │   ├── AddEditScheduleFragment.kt   车次添加页（编辑走列表弹窗）
 │   ├── WheelTimePicker.kt           封装两个 WheelPicker，提供时:分选择
 │   └── adapter/
@@ -147,8 +148,9 @@ schedules（车次）
 └── departureTime  TEXT     严格 HH:mm，默认 "00:00"
 ```
 
-Room schema 版本为 **1**，`exportSchema = false`；将来修改表结构时必须升级版本并在 `AppDatabase`
-中增加 `Migration`。`android:allowBackup` 为开启状态，数据库默认会进入 Android 自动备份。
+Room schema 版本为 **2**，`exportSchema = true`；schema 会导出到 `app/schemas/`。将来修改表结构
+时必须升级版本并在 `AppDatabase` 中增加 `Migration`。`android:allowBackup` 为开启状态，数据库
+默认会进入 Android 自动备份。
 
 ### 下一班车计算
 
@@ -290,13 +292,14 @@ base64 -w 0 release.jks        # Linux/macOS
 
 当前代码刻意保持轻量、少依赖的架构，以下为已知且暂时接受的事项：
 
-- **无 ViewModel/状态层**：弹窗与未提交的表单在配置变更后会丢失；导航为手写实现（无
-  Navigation Component）。
-- **Room 演进**：`exportSchema = false`，没有迁移测试，也没有 schedules 的唯一/CHECK 约束；添加
-  这些需要升级 DB 版本并写迁移。
+- **状态层仍是渐进式**：`AddEditRouteViewModel` 已覆盖路线表单状态保留，但多数页面仍是
+  Fragment 本地状态 + 手写导航（无 Navigation Component）。
+- **Room 演进进入基线阶段**：已启用 schema 导出、补齐 1→2 迁移测试，并为 schedules 增加
+  `routeId + departureTime` 唯一约束；后续约束扩展仍需版本升级与迁移。
 - **小组件 API**：collection `RemoteViews` API 已废弃；不支持"每个小组件实例固定一条路线"的
   配置；闹钟为非精确闹钟（Doze 下可能延迟）。
-- **测试**：只有 `NextDepartureTest` 有真实覆盖；仪器测试仍是 Android Studio 模板。
+- **测试**：已新增 `RouteTransferTest`（JVM）与 `AppDatabaseDaoTest`、`AppDatabaseMigrationTest`
+  （仪器测试），但 UI 流程覆盖仍需继续补齐。
 - **Kotlin + KSP 工具链**：Room 使用 KSP 处理。KSP 目前仍通过 Kotlin source-set DSL 注册生成
   源码，因此 `gradle.properties` 保留了实验性开关 `android.disallowKotlinSourceSets=false`；待 KSP
   原生支持 AGP 9 内置 Kotlin 后可移除。
