@@ -29,10 +29,7 @@ public abstract class RouteDao {
     @Query("UPDATE routes SET isFavorite = :fav WHERE id = :routeId")
     public abstract void setFavorite(long routeId, boolean fav);
 
-    @Query("SELECT * FROM routes WHERE isDefault = 1 LIMIT 1")
-    public abstract Route getDefaultRoute();
-
-    @Query("SELECT * FROM routes")
+    @Query("SELECT * FROM routes ORDER BY isDefault DESC, isFavorite DESC, id DESC")
     public abstract List<Route> getAllRoutesSync();
 
     @Transaction

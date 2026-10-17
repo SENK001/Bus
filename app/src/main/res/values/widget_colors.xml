@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 桌面小组件配色（浅色）。深色模式覆盖见 values-night/widget_colors.xml。 -->
+    <color name="widget_background">#FFFFFFFF</color>
+    <color name="widget_title">#FF212121</color>
+    <color name="widget_text_secondary">#FF757575</color>
+    <color name="widget_divider">#FFE0E0E0</color>
+    <color name="widget_next_time">#FF1565C0</color>
+</resources>

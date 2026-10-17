@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Night values for semantic colors declared in values/colors.xml.
+    Only colors that are resolved outside a themed view context need entries here; everything
+    else uses Material3 DayNight theme attributes.
+-->
+<resources>
+    <color name="dialog_background">#FF211F26</color>
+</resources>

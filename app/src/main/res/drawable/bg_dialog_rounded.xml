@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Rounded dialog surface. The color is DayNight-aware (values-night/colors.xml). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@android:color/white" />
+    <solid android:color="@color/dialog_background" />
     <corners android:radius="24dp" />
 </shape>

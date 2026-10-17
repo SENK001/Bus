@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Brand + semantic color palette.
+
+    Rules for this project:
+    - UI should prefer Material3 theme attributes (?attr/colorOnSurface, ?attr/colorSurface, ...)
+      so light/dark mode adapts automatically.
+    - Only colors that must be resolved outside a themed view context keep concrete values here,
+      with matching night values in values-night/colors.xml.
+-->
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Brand color. Also used as the adaptive launcher icon background. -->
     <color name="primary">#1565C0</color>
-    <color name="primary_dark">#0D47A1</color>
-    <color name="accent">#FF6F00</color>
-    <color name="star_gold">#FFC107</color>
-    <color name="pin_green">#4CAF50</color>
-    <color name="badge_green">#4CAF50</color>
-    <color name="bg_gray">#F5F5F5</color>
-    <color name="text_gray">#545454</color>
+
+    <!--
+        Semantic surfaces reserved for non-themed contexts (e.g. custom drawables/dialogs).
+        Night values are provided in values-night/colors.xml.
+    -->
+    <color name="dialog_background">#FFFFFBFE</color>
 </resources>

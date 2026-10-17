@@ -5,15 +5,15 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- Title/icon tint come from the Material3 DayNight theme; do not hardcode black. -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@android:color/transparent"
-        app:titleTextColor="@android:color/black"
-        app:navigationIconTint="@color/black"
-        app:navigationIcon="?attr/homeAsUpIndicator"
-        app:menu="@menu/menu_add_edit" />
+        app:menu="@menu/menu_add_edit"
+        app:navigationContentDescription="@string/navigate_back"
+        app:navigationIcon="?attr/homeAsUpIndicator" />
 
     <ScrollView
         android:layout_width="match_parent"

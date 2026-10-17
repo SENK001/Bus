@@ -1,6 +1,8 @@
 package com.senk.bus.ui;
 
+import android.app.Activity;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,10 +11,16 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.senk.bus.R;
 
 public class QueryFragment extends Fragment {
+
+    /** 导航入口防抖窗口：避免快速双击压入两个相同页面。 */
+    private static final long NAVIGATION_DEBOUNCE_MS = 500L;
+
+    private long lastNavigationAt;
 
     @Nullable
     @Override
@@ -37,10 +45,20 @@ public class QueryFragment extends Fragment {
                 new OnBackPressedCallback(true) {
                     @Override
                     public void handleOnBackPressed() {
-                        if (getChildFragmentManager().getBackStackEntryCount() > 0) {
-                            getChildFragmentManager().popBackStack();
-                        } else {
-                            requireActivity().finish();
+                        FragmentManager childManager = getChildFragmentManager();
+                        if (childManager.isStateSaved()) {
+                            // 已保存状态（即将重建）时不能立即出栈，避免 IllegalStateException。
+                            return;
+                        }
+                        if (childManager.getBackStackEntryCount() > 0) {
+                            // popBackStackImmediate 同步执行：出栈后 count 立即更新，快速连按返回键
+                            // 时第二次按键基于最新 count 判断，不会一次弹出两层。
+                            childManager.popBackStackImmediate();
+                            return;
+                        }
+                        Activity activity = getActivity();
+                        if (activity != null) {
+                            activity.finish();
                         }
                     }
                 }
@@ -48,41 +66,40 @@ public class QueryFragment extends Fragment {
     }
 
     public void navigateToScheduleList(long routeId, String routeName) {
-        getChildFragmentManager()
-                .beginTransaction()
-                .replace(R.id.query_container, ScheduleListFragment.newInstance(routeId, routeName))
-                .addToBackStack(null)
-                .commit();
+        navigateTo(ScheduleListFragment.newInstance(routeId, routeName));
     }
 
     public void navigateToAddRoute() {
-        getChildFragmentManager()
-                .beginTransaction()
-                .replace(R.id.query_container, AddEditRouteFragment.newInstance())
-                .addToBackStack(null)
-                .commit();
+        navigateTo(AddEditRouteFragment.newInstance());
     }
 
     public void navigateToEditRoute(long routeId) {
-        getChildFragmentManager()
-                .beginTransaction()
-                .replace(R.id.query_container, AddEditRouteFragment.newInstance(routeId))
-                .addToBackStack(null)
-                .commit();
+        navigateTo(AddEditRouteFragment.newInstance(routeId));
     }
 
     public void navigateToAddSchedule(long routeId) {
-        getChildFragmentManager()
-                .beginTransaction()
-                .replace(R.id.query_container, AddEditScheduleFragment.newInstance(routeId))
-                .addToBackStack(null)
-                .commit();
+        navigateTo(AddEditScheduleFragment.newInstance(routeId));
     }
 
     public void navigateToEditSchedule(long routeId, long scheduleId) {
-        getChildFragmentManager()
-                .beginTransaction()
-                .replace(R.id.query_container, AddEditScheduleFragment.newInstance(routeId, scheduleId))
+        navigateTo(AddEditScheduleFragment.newInstance(routeId, scheduleId));
+    }
+
+    /**
+     * 统一的子页面导航入口：500ms 时间戳防抖，避免快速双击/连点把同一个页面压栈两次。
+     */
+    private void navigateTo(Fragment fragment) {
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastNavigationAt < NAVIGATION_DEBOUNCE_MS) {
+            return;
+        }
+        FragmentManager childManager = getChildFragmentManager();
+        if (childManager.isStateSaved()) {
+            return;
+        }
+        lastNavigationAt = now;
+        childManager.beginTransaction()
+                .replace(R.id.query_container, fragment)
                 .addToBackStack(null)
                 .commit();
     }

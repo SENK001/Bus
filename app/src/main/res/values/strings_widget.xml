@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 仅小组件专用的新增文案；通用文案仍复用 strings.xml。 -->
+    <string name="widget_route_missing">路线已不存在，请刷新小组件</string>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Single adaptive launcher icon for every density (minSdk 29, so anydpi-v26 always applies).
+    The <monochrome> layer lets Android 13+ themed icons tint the launcher icon and silences
+    the MonochromeLauncherIcon lint warning.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/primary" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

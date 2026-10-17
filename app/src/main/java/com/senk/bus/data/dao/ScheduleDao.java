@@ -14,6 +14,10 @@ public interface ScheduleDao {
     @Query("SELECT * FROM schedules WHERE routeId = :routeId ORDER BY departureTime ASC")
     List<Schedule> getSchedulesForRouteSync(long routeId);
 
+    /** All schedules for every route, ordered for grouping by routeId. */
+    @Query("SELECT * FROM schedules ORDER BY routeId ASC, departureTime ASC")
+    List<Schedule> getAllSchedulesSync();
+
     @Query("SELECT * FROM schedules WHERE id = :id")
     Schedule getById(long id);
 
@@ -26,6 +30,4 @@ public interface ScheduleDao {
     @Delete
     void delete(Schedule schedule);
 
-    @Query("DELETE FROM schedules WHERE routeId = :routeId")
-    void deleteByRouteId(long routeId);
 }

@@ -18,6 +18,7 @@
             android:id="@+id/item_route_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/widget_title"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -26,8 +27,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:textSize="12sp"
-            android:textColor="#757575" />
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="12sp" />
 
     </LinearLayout>
 
@@ -37,8 +38,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:fontFamily="monospace"
+        android:textColor="@color/widget_next_time"
         android:textSize="20sp"
-        android:textColor="@color/primary"
         android:textStyle="bold"
         android:visibility="gone" />
 

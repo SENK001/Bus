@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UnusedAttribute"
     android:minWidth="250dp"
     android:minHeight="100dp"
     android:minResizeWidth="180dp"
@@ -8,4 +10,7 @@
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/widget_bus"
+    android:previewLayout="@layout/widget_bus"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
     android:description="@string/widget_description" />

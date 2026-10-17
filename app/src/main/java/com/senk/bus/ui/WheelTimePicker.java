@@ -69,6 +69,6 @@ public class WheelTimePicker {
     }
 
     public String getFormattedTime() {
-        return String.format(Locale.getDefault(),"%02d:%02d", hour, minute);
+        return String.format(Locale.ROOT, "%02d:%02d", hour, minute);
     }
 }

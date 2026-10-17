@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Accessibility-only strings (content descriptions, hints, state announcements).
+
+    Kept in a separate file from strings.xml so that user-visible copy and
+    screen-reader copy can be reviewed/translated independently. Do not put
+    regular UI labels here.
+-->
+<resources>
+    <!-- Content description for the toolbar up/back navigation icon. -->
+    <string name="navigate_back">返回上一页</string>
+</resources>

@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
+    android:foreground="?attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:padding="16dp">
@@ -13,9 +13,11 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:fontFamily="monospace"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="20sp"
         android:textStyle="bold" />
 
+    <!-- 徽章底色为固定绿色，因此文字保持白色以保证对比度。 -->
     <TextView
         android:id="@+id/tv_next_badge"
         android:layout_width="wrap_content"

@@ -1,9 +1,14 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Bus" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    </style>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Base application theme: Material3 DayNight, no ActionBar.
 
-    <style name="Theme.Bus" parent="Base.Theme.Bus"/>
+        Dark mode is provided by the DayNight parent (the framework swaps the whole color
+        palette based on the system/AppCompat night mode). Do not hardcode light-only colors
+        in layouts; use theme attributes, or add semantic colors to colors.xml plus a matching
+        entry in values-night/colors.xml when a concrete color is unavoidable.
+    -->
+    <style name="Base.Theme.Bus" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <style name="Theme.Bus" parent="Base.Theme.Bus" />
 </resources>

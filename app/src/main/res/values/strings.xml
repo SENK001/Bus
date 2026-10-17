@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">班车查询</string>
-    <string name="back">返回</string>
     <string name="empty_routes">暂无路线，点击 + 添加</string>
     <string name="empty_schedules">该路线暂无车次，点击 + 添加</string>
     <string name="add_route">添加路线</string>
@@ -18,25 +17,29 @@
     <string name="route_saved">路线已保存</string>
     <string name="route_updated">路线已更新</string>
     <string name="route_deleted">已删除「%s」</string>
-    <string name="departure_time_hint">发车时间</string>
-    <string name="pick_departure">选择发车时间</string>
-    <string name="not_set">未设置</string>
-    <string name="pick_time">选择时间</string>
-    <string name="set_departure_time">请设置发车时间</string>
+    <string name="route_desc_format">%1$s → %2$s</string>
+    <string name="time_separator">:</string>
     <string name="schedule_saved">车次已保存</string>
     <string name="schedule_updated">车次已更新</string>
     <string name="schedule_deleted">车次已删除</string>
+    <string name="save_failed">保存失败，请重试</string>
+    <string name="delete_failed">删除失败，请重试</string>
+    <string name="operation_failed">操作失败，请重试</string>
     <string name="next_badge">NEXT</string>
     <string name="next_departure_format">距下班车还有 %s</string>
-    <string name="time_remaining_hm">%d小时%d分钟</string>
-    <string name="time_remaining_m">%d分钟</string>
+    <string name="time_remaining_hm">%1$d小时%2$d分钟</string>
+    <string name="time_remaining_m">%1$d分钟</string>
     <string name="depart_now">即将发车</string>
     <string name="depart_in_hm">%1$d小时%2$d分钟后发车</string>
     <string name="depart_in_m">%d分钟后发车</string>
     <string name="favorite">收藏</string>
     <string name="unfavorite">取消收藏</string>
+    <string name="favorite_added">已收藏</string>
+    <string name="favorite_removed">已取消收藏</string>
     <string name="set_default">设为默认</string>
     <string name="unset_default">取消默认</string>
+    <string name="default_set">已设为默认</string>
+    <string name="default_unset">已取消默认</string>
     <string name="edit">编辑</string>
     <string name="delete">删除</string>
     <string name="cancel">取消</string>
@@ -45,7 +48,8 @@
     <string name="action_export">导出</string>
     <string name="action_import">导入</string>
     <string name="export_success">已复制到剪贴板</string>
-    <string name="import_success">导入成功</string>
+    <string name="export_error">导出失败，请重试</string>
+    <string name="import_result">导入 %1$d 条路线，跳过 %2$d 条无效数据</string>
     <string name="import_error">导入失败，剪贴板内容无效</string>
     <string name="widget_description">显示路线和下个班车时间</string>
     <string name="widget_title">班车查询</string>
