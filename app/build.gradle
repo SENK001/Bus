@@ -2,31 +2,53 @@ plugins {
     id 'com.android.application'
 }
 
+// Release signing is opt-in through environment variables so that local builds do not need a
+// keystore. CI sets these from repository secrets before running assembleRelease.
+def releaseKeystoreFile = System.getenv('RELEASE_KEYSTORE_FILE')
+def hasReleaseKeystore = releaseKeystoreFile != null && !releaseKeystoreFile.isEmpty()
+
 android {
-    namespace 'com.senk.bus'
+    namespace = 'com.senk.bus'
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId "com.senk.bus"
-        minSdk 29
-        targetSdk 36
-        versionCode 100000
-        versionName "1.0.0"
+        applicationId = "com.senk.bus"
+        minSdk = 29
+        targetSdk = 36
+        versionCode = 100000
+        versionName = "1.0.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            // Configured only when the keystore is available; otherwise this signing config is
+            // left empty and the release build type stays unsigned.
+            if (hasReleaseKeystore) {
+                storeFile = file(releaseKeystoreFile)
+                storePassword = System.getenv('RELEASE_STORE_PASSWORD')
+                keyAlias = System.getenv('RELEASE_KEY_ALIAS')
+                keyPassword = System.getenv('RELEASE_KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.release
+            }
         }
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
@@ -35,11 +57,9 @@ dependencies {
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'com.github.open-android:WheelPicker:v1.0.0'
     implementation 'androidx.activity:activity:1.13.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'androidx.fragment:fragment:1.8.9'
     implementation 'androidx.lifecycle:lifecycle-livedata:2.10.0'
-    annotationProcessor 'androidx.lifecycle:lifecycle-common:2.10.0'
     implementation 'androidx.room:room-runtime:2.8.4'
     annotationProcessor 'androidx.room:room-compiler:2.8.4'
     testImplementation 'junit:junit:4.13.2'

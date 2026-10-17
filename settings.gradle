@@ -11,12 +11,15 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
+        // WheelPicker is published on JitPack only. `url =` (instead of space assignment) is
+        // required by Gradle 10.
+        maven { url = 'https://jitpack.io' }
     }
 }
 

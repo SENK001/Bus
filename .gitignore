@@ -23,6 +23,13 @@ misc.xml
 deploymentTargetDropDown.xml
 render.experimental.xml
 
+# Kotlin compiler caches
+.kotlin/
+
+# Local tooling / temporary reports (not part of the app)
+.reports/
+.claude/
+
 # Keystore files
 *.jks
 *.keystore
