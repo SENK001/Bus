@@ -31,8 +31,8 @@ AGENTS.md                 this file (agent guidance)
 LICENSE                   MIT
 app/                      application module
   src/main/java/…         Kotlin sources (production code + Room entities)
-  src/test/java/…         JVM unit tests (NextDepartureTest)
-  src/androidTest/…       instrumented test template
+  src/test/java/…         JVM unit tests (NextDepartureTest, RouteTransferTest)
+  src/androidTest/…       Room DAO + migration instrumented tests
   build.gradle            SDK levels, signing config, dependencies
 build.gradle              AGP version
 settings.gradle           repositories (JitPack for WheelPicker)
@@ -46,7 +46,7 @@ settings.gradle           repositories (JitPack for WheelPicker)
 ```bash
 ./gradlew assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew assembleRelease        # unsigned unless RELEASE_* env vars are provided
-./gradlew test                   # JVM unit tests (NextDepartureTest, 13 cases)
+./gradlew test                   # JVM unit tests (NextDepartureTest, RouteTransferTest)
 ./gradlew lintDebug              # Android lint
 ./gradlew connectedAndroidTest   # instrumented tests (device/emulator required)
 ```
@@ -100,8 +100,9 @@ com.senk.bus
 - `routes`: `id` (PK, long), `name`, `origin`, `destination`, `isFavorite`, `isDefault`.
 - `schedules`: `id` (PK, long), `routeId` (FK → `routes.id`, `ON DELETE CASCADE`, indexed),
   `departureTime` (strict `HH:mm` string).
-- Schema version is **2** and `exportSchema = true`. Changing the schema requires a version bump
-  plus a `Migration` in `AppDatabase`; Room migration testing is available.
+- Schema version is **2** and `exportSchema = true`. Exported schemas are committed under
+  `app/schemas/` and are used as androidTest assets by the migration tests. Changing the schema
+  requires a version bump plus a `Migration` in `AppDatabase`.
 - `android:allowBackup` is on, so the database is included in Android auto-backup.
 
 ## Hard Rules (common sources of bugs)
@@ -207,8 +208,13 @@ com.senk.bus
 
 - `app/src/test/java/com/senk/bus/data/NextDepartureTest.kt` — 13 JVM tests covering parsing,
   formatting, midnight wrap and `find(...)` edge cases. Extend it when touching time logic.
-- `ExampleUnitTest` / `ExampleInstrumentedTest` are Android Studio templates; do not treat them as
-  coverage.
+- `app/src/test/java/com/senk/bus/data/RouteTransferTest.kt` — JVM tests for the import/export
+  codec. They rely on `org.json:json` (test-only dependency) because `android.jar`'s `org.json`
+  stubs throw in JVM tests.
+- `app/src/androidTest/java/com/senk/bus/data/AppDatabaseDaoTest.kt` and
+  `AppDatabaseMigrationTest.kt` cover DAO constraints/defaults and the 1→2 migration. Migration
+  tests read the exported schema assets from `app/schemas/` (see `android.sourceSets.androidTest`
+  assets); keep `app/schemas/` committed and up to date when the schema changes.
 - Prefer pure-Kotlin helpers (no Android imports) so logic stays unit-testable without Robolectric.
 
 ## Known Limitations (accepted, do not "fix" silently)

@@ -1,9 +1,7 @@
 package com.senk.bus.data
 
-import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -18,58 +16,35 @@ class AppDatabaseMigrationTest {
     val helper: MigrationTestHelper = MigrationTestHelper(
         InstrumentationRegistry.getInstrumentation(),
         AppDatabase::class.java,
+        emptyList(),
         FrameworkSQLiteOpenHelperFactory(),
     )
 
     @Test
     fun migrate1To2_deduplicatesScheduleTimes() {
         val dbName = "migration-test"
+        // v1 schema comes from app/schemas (asset). Duplicate times are allowed in v1.
         helper.createDatabase(dbName, 1).apply {
-            execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS routes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                    name TEXT NOT NULL,
-                    origin TEXT NOT NULL,
-                    destination TEXT NOT NULL,
-                    isFavorite INTEGER NOT NULL,
-                    isDefault INTEGER NOT NULL
-                )
-                """.trimIndent(),
-            )
-            execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS schedules (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                    routeId INTEGER NOT NULL,
-                    departureTime TEXT NOT NULL,
-                    FOREIGN KEY(routeId) REFERENCES routes(id) ON UPDATE NO ACTION ON DELETE CASCADE
-                )
-                """.trimIndent(),
-            )
-            execSQL("CREATE INDEX IF NOT EXISTS index_schedules_routeId ON schedules(routeId)")
             execSQL(
                 "INSERT INTO routes(id, name, origin, destination, isFavorite, isDefault) " +
                     "VALUES (1, 'A', 'O', 'D', 0, 0)",
             )
             execSQL("INSERT INTO schedules(id, routeId, departureTime) VALUES (1, 1, '08:30')")
             execSQL("INSERT INTO schedules(id, routeId, departureTime) VALUES (2, 1, '08:30')")
-            close()
         }
 
-        val migrated = Room.databaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            AppDatabase::class.java,
+        // Runs MIGRATION_1_2 and validates the migrated schema against exported 2.json.
+        val migrated = helper.runMigrationsAndValidate(
             dbName,
-        ).addMigrations(AppDatabase.MIGRATION_1_2)
-            .allowMainThreadQueries()
-            .build()
-        try {
-            val rows = migrated.scheduleDao().getSchedulesForRouteSync(1L)
-                .filter { it.departureTime == "08:30" }
-            assertEquals(1, rows.size)
-        } finally {
-            migrated.close()
+            2,
+            true,
+            AppDatabase.MIGRATION_1_2,
+        )
+        migrated.query(
+            "SELECT COUNT(*) FROM schedules WHERE routeId = 1 AND departureTime = '08:30'",
+        ).use { cursor ->
+            val count = if (cursor.moveToFirst()) cursor.getInt(0) else -1
+            assertEquals(1, count)
         }
     }
 }
