@@ -23,10 +23,10 @@ class WheelTimePicker(
     init {
         val hours: List<String> = context.resources.getStringArray(R.array.hours).toList()
         val minutes: List<String> = context.resources.getStringArray(R.array.minutes).toList()
-        wheelHour.setData(hours)
-        wheelMinute.setData(minutes)
-        wheelHour.setTypeface(Typeface.MONOSPACE)
-        wheelMinute.setTypeface(Typeface.MONOSPACE)
+        wheelHour.data = hours
+        wheelMinute.data = minutes
+        wheelHour.typeface = Typeface.MONOSPACE
+        wheelMinute.typeface = Typeface.MONOSPACE
 
         wheelHour.setOnItemSelectedListener { _, _, position ->
             hourValue = position
@@ -49,8 +49,8 @@ class WheelTimePicker(
     fun setTime(hour: Int, minute: Int) {
         hourValue = hour
         minuteValue = minute
-        wheelHour.setSelectedItemPosition(hour)
-        wheelMinute.setSelectedItemPosition(minute)
+        wheelHour.selectedItemPosition = hour
+        wheelMinute.selectedItemPosition = minute
     }
 
     fun getHour(): Int = hourValue

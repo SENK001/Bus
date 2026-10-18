@@ -53,7 +53,7 @@ class AddEditScheduleFragment : Fragment() {
         val isEdit = scheduleId != NO_ID
 
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
-        toolbar.setTitle(if (isEdit) R.string.edit_schedule else R.string.add_schedule)
+        toolbar.title = getString(if (isEdit) R.string.edit_schedule else R.string.add_schedule)
         toolbar.setNavigationOnClickListener { navigateBack() }
 
         timePicker = WheelTimePicker(

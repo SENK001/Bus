@@ -112,7 +112,7 @@ class ScheduleListFragment : Fragment() {
 
         val args = arguments
         if (args != null) {
-            toolbar.setTitle(args.getString(ARG_ROUTE_NAME))
+            toolbar.title = args.getString(ARG_ROUTE_NAME)
         }
     }
 
@@ -396,9 +396,9 @@ class ScheduleListFragment : Fragment() {
         if (fraction >= 1f) {
             val extraScroll = scrollY - maxScroll
             val fontFraction = min(1f, extraScroll / (100 * density))
-            banner.setTextSize(MAX_TEXT_SP - fontFraction * (MAX_TEXT_SP - MIN_TEXT_SP))
+            banner.textSize = MAX_TEXT_SP - fontFraction * (MAX_TEXT_SP - MIN_TEXT_SP)
         } else {
-            banner.setTextSize(MAX_TEXT_SP)
+            banner.textSize = MAX_TEXT_SP
         }
     }
 

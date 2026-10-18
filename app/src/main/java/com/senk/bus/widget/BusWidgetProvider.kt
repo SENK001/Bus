@@ -45,7 +45,7 @@ class BusWidgetProvider : AppWidgetProvider() {
 
             // 标题点击：打开 App。
             val titleIntent = Intent(context, MainActivity::class.java)
-            titleIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            titleIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             val titlePendingIntent = PendingIntent.getActivity(
                 context,
                 0,
@@ -63,7 +63,7 @@ class BusWidgetProvider : AppWidgetProvider() {
             // 列表项点击模板：Intent 必须是显式组件，且 PendingIntent 必须为 MUTABLE，
             // 否则系统无法把 fill-in Intent 里的 routeId 合并进来，点击会失效。
             val clickIntent = Intent(context, MainActivity::class.java)
-            clickIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            clickIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             val clickPendingIntent = PendingIntent.getActivity(
                 context,
                 appWidgetId,
@@ -202,7 +202,7 @@ class BusWidgetProvider : AppWidgetProvider() {
 
         private fun buildRefreshPendingIntent(context: Context): PendingIntent {
             val intent = Intent(context, BusWidgetProvider::class.java)
-            intent.setAction(ACTION_REFRESH)
+            intent.action = ACTION_REFRESH
             // 闹钟广播只在本应用内闭环，不需要 fill-in，使用 IMMUTABLE 即可。
             return PendingIntent.getBroadcast(
                 context,

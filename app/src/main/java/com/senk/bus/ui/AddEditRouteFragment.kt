@@ -49,7 +49,7 @@ class AddEditRouteFragment : Fragment() {
         val isEdit = routeId != NO_ID
 
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
-        toolbar.setTitle(if (isEdit) R.string.edit_route else R.string.add_route)
+        toolbar.title = getString(if (isEdit) R.string.edit_route else R.string.add_route)
         toolbar.setNavigationOnClickListener { navigateBack() }
 
         val etName = view.findViewById<EditText>(R.id.et_route_name)
